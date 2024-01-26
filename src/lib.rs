@@ -1,6 +1,5 @@
 extern crate core;
 
-use arboard;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::sync::{Mutex, MutexGuard, OnceLock};
@@ -29,22 +28,23 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 fn copy(content: &str) -> PyResult<()> {
     let mut cb = get_clipboard()?;
 
-    cb.set_text(content).map_err(|e| to_exc(e))?;
+    cb.set_text(content).map_err(to_exc)?;
     Ok(())
 }
 
 #[pyfunction]
 fn paste() -> PyResult<String> {
     let mut cb = get_clipboard()?;
+    let content = cb.get_text().map_err(to_exc)?;
 
-    Ok(cb.get_text().map_err(|e| to_exc(e))?)
+    Ok(content)
 }
 
 #[pyfunction]
 fn clear() -> PyResult<()> {
     let mut cb = get_clipboard()?;
 
-    cb.clear().map_err(|e| to_exc(e))
+    cb.clear().map_err(to_exc)
 }
 
 #[pymodule]
