@@ -1,0 +1,53 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+        types: [text]
+      - id: end-of-file-fixer
+        types: [text]
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        stages:
+          - commit
+        types: [python]
+
+      - id: black
+        name: black-check
+        args:
+          - --check
+          - --diff
+        stages:
+          - manual
+        types: [python]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        stages:
+          - commit
+          - manual
+        additional_dependencies: [flake8-bugbear]
+        types: [python]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        stages:
+          - commit
+        types: [python]
+
+      - id: isort
+        name: isort-check
+        args:
+          - --check-only
+        stages:
+          - manual
+        types: [python]

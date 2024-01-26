@@ -1,21 +1,21 @@
 import subprocess
-
-from copykitten import copy, paste, clear
-from unittest import TestCase
 from time import sleep
+from unittest import TestCase
+
+import copykitten
 
 
 def read_clipboard() -> str:
-    return subprocess.check_output(["xsel", '-b']).decode()
+    return subprocess.check_output(["xsel", "-b"]).decode()
 
 
 class TestCopy(TestCase):
     def test_copy(self):
         for i in range(300):
-            text = "text" + str(i)
+            text = f"text{i}"
 
             with self.subTest(text=text):
-                copy(text)
+                copykitten.copy(text)
                 sleep(0.1)
                 actual = read_clipboard()
 

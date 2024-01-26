@@ -30,7 +30,7 @@ At the time of writing, there are very few Python packages that handle the clipb
 maintained (including the most popular solution around the web, [pyperclip](https://github.com/asweigart/pyperclip)).
 
 They all depend on external command-line tools like xclip/pbcopy or libraries like PyQt/GTK. You have to make sure these 
-dependencies are installed on the target machine, otherwise they won’t work. 
+dependencies are installed on the target machine, otherwise they won’t work.
 
 There are some solutions using the Tkinter library, which comes with the standard Python suite. However, these solutions 
 are fragile and may leave your app unresponsive.

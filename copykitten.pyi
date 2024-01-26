@@ -1,30 +1,37 @@
 class CopykittenError(Exception):
+    """
+    Raised if anything went wrong during any clipboard operation.
+    Possible reasons: invalid content, clipboard is unavailable, etc.
+    """
     pass
 
 
 def copy(content: str) -> None:
     """
-    Copies passed content into the clipboard.
+    Copies passed text content into the clipboard.
+    Content must be a valid UTF-8 string.
 
     :param content: Text to copy.
-    :raise: CopykittenError
+    :raises CopykittenError
     """
     ...
 
+
 def paste() -> str:
     """
-    Returns the current content of the clipboard.
+    Returns the current text content of the clipboard
+    as a UTF-8 string.
 
     :return: Clipboard content.
-    :raise: CopykittenError
+    :raises CopykittenError
     """
     ...
 
 
 def clear() -> None:
     """
-    Clears the clipboard.
+    Clears the clipboard (basically, sets it to an empty string).
 
-    :raise: CopykittenError
+    :raises CopykittenError
     """
     ...
