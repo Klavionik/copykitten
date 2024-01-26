@@ -11,12 +11,12 @@ def read_clipboard() -> str:
 
 class TestCopy(TestCase):
     def test_copy(self):
-        for i in range(100):
+        for i in range(300):
             text = "text" + str(i)
 
             with self.subTest(text=text):
                 copy(text)
-                sleep(0.3)
+                sleep(0.1)
                 actual = read_clipboard()
 
                 self.assertEqual(actual, text)
