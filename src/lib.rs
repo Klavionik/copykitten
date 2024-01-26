@@ -1,50 +1,60 @@
 extern crate core;
 
-use std::{time, thread};
-use arboard::Clipboard;
+use arboard;
 use pyo3::create_exception;
 use pyo3::prelude::*;
+use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::{thread, time};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
-fn get_clipboard() -> Result<Clipboard, PyErr> {
-    return match Clipboard::new() {
-        Ok(clipboard) => Ok(clipboard),
-        Err(e) => Err(CopykittenError::new_err("Cannot initialize clipboard.")),
-    };
+static CLIPBOARD: OnceLock<Mutex<arboard::Clipboard>> = OnceLock::new();
+
+fn raise_exc(text: &'static str) -> PyErr {
+    CopykittenError::new_err(text)
+}
+
+fn to_exc(err: arboard::Error) -> PyErr {
+    CopykittenError::new_err(err.to_string())
+}
+
+fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
+    CLIPBOARD
+        .get()
+        .ok_or(raise_exc("Clipboard was never initialized."))?
+        .lock()
+        .map_err(|_| raise_exc("Cannot get lock on the clipboard, the lock is poisoned."))
 }
 
 #[pyfunction]
 fn copy(content: &str) -> PyResult<()> {
-    let mut cb = get_clipboard().unwrap();
+    let mut cb = get_clipboard()?;
 
-    cb.set_text(content).unwrap();
-    thread::sleep(time::Duration::from_millis(50));
+    cb.set_text(content).map_err(|e| to_exc(e))?;
     Ok(())
 }
 
 #[pyfunction]
 fn paste() -> PyResult<String> {
-    let mut cb = get_clipboard().unwrap();
+    let mut cb = get_clipboard()?;
 
-    return match cb.get_text() {
-        Ok(text) => Ok(text),
-        Err(_e) => Err(CopykittenError::new_err("Cannot paste content.")),
-    };
+    Ok(cb.get_text().map_err(|e| to_exc(e))?)
 }
 
 #[pyfunction]
 fn clear() -> PyResult<()> {
-    let mut cb = get_clipboard().unwrap();
+    let mut cb = get_clipboard()?;
 
-    return match cb.clear() {
-        Ok(result) => Ok(result),
-        Err(_e) => Err(CopykittenError::new_err("Cannot clear clipboard.")),
-    };
+    cb.clear().map_err(|e| to_exc(e))
 }
 
 #[pymodule]
 fn copykitten(py: Python, module: &PyModule) -> PyResult<()> {
+    let clipboard =
+        arboard::Clipboard::new().map_err(|_| raise_exc("Cannot initialize clipboard"))?;
+    CLIPBOARD
+        .set(Mutex::new(clipboard))
+        .map_err(|_| raise_exc("Global clipboard already created."))?;
     module.add("CopykittenError", py.get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(paste, module)?)?;
@@ -52,11 +62,10 @@ fn copykitten(py: Python, module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::process::{Command, Output};
     use super::*;
+    use std::process::{Command, Output};
 
     fn read_clipboard() -> Output {
         return Command::new("xsel")
