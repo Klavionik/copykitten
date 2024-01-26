@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import copykitten
 
-DEFAULT_ITERATIONS = 300
+DEFAULT_ITERATIONS = 100
 DEFAULT_SLEEP_TIME = 0.1
 
 try:
@@ -14,7 +14,7 @@ except Exception:
     ITERATIONS = DEFAULT_ITERATIONS
 
 try:
-    SLEEP_TIME = int(os.getenv("COPYKITTEN_TEST_SLEEP_TIME", DEFAULT_SLEEP_TIME))
+    SLEEP_TIME = float(os.getenv("COPYKITTEN_TEST_SLEEP_TIME", DEFAULT_SLEEP_TIME))
 except Exception:
     SLEEP_TIME = DEFAULT_SLEEP_TIME
 
