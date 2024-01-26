@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 arboard = "3.3.0"
-pyo3 = "0.20.0"
+pyo3 = { version =  "0.20.0", features = ["extension-module"] }
