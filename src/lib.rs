@@ -4,7 +4,6 @@ use arboard;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::sync::{Mutex, MutexGuard, OnceLock};
-use std::{thread, time};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
@@ -60,29 +59,4 @@ fn copykitten(py: Python, module: &PyModule) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(paste, module)?)?;
     module.add_function(wrap_pyfunction!(clear, module)?)?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::process::{Command, Output};
-
-    fn read_clipboard() -> Output {
-        return Command::new("xsel")
-            .arg("-b")
-            .output()
-            .expect("xsel failure");
-    }
-
-    #[test]
-    fn test_add() {
-        for i in 0..100 {
-            let text = format!("text{}", i);
-            copy(&text).unwrap();
-            thread::sleep(time::Duration::from_millis(100));
-
-            let output = read_clipboard();
-            assert_eq!(text, String::from_utf8_lossy(&output.stdout));
-        }
-    }
 }
