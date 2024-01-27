@@ -44,9 +44,33 @@ jobs:
 #          source .venv/bin/activate
 #          python -m unittest -v
 
-  windows:
-    name: Build & test on Windows
-    runs-on: windows-latest
+#  windows:
+#    name: Build & test on Windows
+#    runs-on: windows-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.8'
+#      - name: Setup venv
+#        run: python -m venv .venv
+#      - name: Build extension module and install package
+#        uses: PyO3/maturin-action@v1
+#        with:
+#          command: develop
+#          target: x64
+#      - name: Run tests
+#        shell: powershell
+#        run: |
+#          .venv/Scripts/activate.ps1
+#          python -m unittest -v
+#
+  macos:
+    name: Build & test on MacOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -58,31 +82,8 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: develop
-          target: x64
+          target: ${{ matrix.target }}
       - name: Run tests
-        shell: powershell
         run: |
-          .venv/Scripts/activate.ps1
+          source .venv/bin/activate
           python -m unittest -v
-#
-#  macos:
-#    runs-on: macos-latest
-#    strategy:
-#      matrix:
-#        target: [x86_64, aarch64]
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: actions/setup-python@v4
-#        with:
-#          python-version: '3.8'
-#      - name: Build wheels
-#        uses: PyO3/maturin-action@v1
-#        with:
-#          target: ${{ matrix.target }}
-#          args: --release --out dist --find-interpreter
-#          sccache: 'true'
-#      - name: Upload wheels
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: wheels
-#          path: dist
