@@ -4,64 +4,66 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint:
-    name: Run linters
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-      - uses: Klavionik/pre-commit-action@main
-        with:
-          extra_args: "--hook-stage manual"
+#  lint:
+#    name: Run linters
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-python@v5
+#      - uses: Klavionik/pre-commit-action@main
+#        with:
+#          extra_args: "--hook-stage manual"
+#
+#  test-linux:
+#    name: Build & test on Linux
+#    runs-on: ubuntu-latest
+#    needs: [lint]
+#    strategy:
+#      matrix:
+#        target: [x86_64, aarch64]
+#    env:
+#      DISPLAY: :0
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.8'
+#      - name: Install test dependencies
+#        run:  sudo apt-get update & sudo apt-get install -y xvfb xsel
+#      - name: Run virtual X11 server
+#        run: Xvfb :0 -screen 0 800x600x16 &
+#      - name: Setup venv
+#        run: python -m venv .venv
+#      - name: Build extension module and install package
+#        uses: PyO3/maturin-action@v1
+#        with:
+#          command: develop
+#          target: ${{ matrix.target }}
+#      - name: Run tests
+#        run: |
+#          source .venv/bin/activate
+#          python -m unittest -v
 
-  test-linux:
-    name: Build & test on Linux
-    runs-on: ubuntu-latest
-    needs: [lint]
-    strategy:
-      matrix:
-        target: [x86_64, aarch64]
-    env:
-      DISPLAY: :0
+  windows:
+    name: Build & test on Windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.8'
-      - name: Install test dependencies
-        run:  sudo apt-get update & sudo apt-get install -y xvfb xsel
-      - name: Run virtual X11 server
-        run: Xvfb :0 -screen 0 800x600x16 &
       - name: Setup venv
         run: python -m venv .venv
       - name: Build extension module and install package
         uses: PyO3/maturin-action@v1
         with:
           command: develop
-          target: ${{ matrix.target }}
+          target: x64
       - name: Run tests
+        shell: powershell
         run: |
-          source .venv/bin/activate
+          .venv/Scripts/activate.ps1
           python -m unittest -v
-#
-#  windows:
-#    runs-on: windows-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: actions/setup-python@v4
-#        with:
-#          python-version: '3.8'
-#      - name: Build wheels
-#        uses: PyO3/maturin-action@v1
-#        with:
-#          target: x64
-#          args: --release --out dist --find-interpreter
-#          sccache: 'true'
-#      - name: Upload wheels
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: wheels
-#          path: dist
 #
 #  macos:
 #    runs-on: macos-latest
