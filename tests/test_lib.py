@@ -1,9 +1,9 @@
 import os
-import subprocess
 from time import sleep
 from unittest import TestCase
 
 import copykitten
+from tests.utils import read_clipboard, write_clipboard
 
 DEFAULT_ITERATIONS = 100
 DEFAULT_SLEEP_TIME = 0.1
@@ -17,14 +17,6 @@ try:
     SLEEP_TIME = float(os.getenv("COPYKITTEN_TEST_SLEEP_TIME", DEFAULT_SLEEP_TIME))
 except Exception:
     SLEEP_TIME = DEFAULT_SLEEP_TIME
-
-
-def read_clipboard() -> str:
-    return subprocess.check_output(["xsel", "-b"]).decode()
-
-
-def write_clipboard(content: str) -> None:
-    subprocess.check_output(["xsel", "-b"], encoding="utf-8", input=content)
 
 
 class TestClipboard(TestCase):
