@@ -13,7 +13,19 @@ repos:
     hooks:
       - id: cargo-fmt
         name: cargo-fmt
+        stages:
+          - commit
         entry: cargo fmt
+        language: system
+        types: [rust]
+        args:
+          - "--"
+
+      - id: cargo-fmt-check
+        name: cargo-fmt-check
+        stages:
+          - manual
+        entry: cargo fmt --check
         language: system
         types: [rust]
         args:

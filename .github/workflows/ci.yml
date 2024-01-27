@@ -4,8 +4,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  linux:
+  lint:
+    name: Run linters
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - uses: Klavionik/pre-commit-action@main
+        with:
+          extra_args: "--hook-stage manual"
+
+  test-linux:
+    name: Build & test on Linux
+    runs-on: ubuntu-latest
+    needs: [lint]
     strategy:
       matrix:
         target: [x86_64, aarch64]
