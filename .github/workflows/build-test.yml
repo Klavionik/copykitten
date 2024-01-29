@@ -29,10 +29,6 @@ on:
 
 env:
   # If this workflow is called to build for release, build using
-  # only one Python version, which is the lowest ABI version set
-  # in PyO3 features.
-  pymatrix: ${{ inputs.release && fromJSON(['3.8']) || fromJSON(['3.8', '3.12']) }}
-  # If this workflow is called to build for release, build using
   # release profile.
   build_profile: ${{ inputs.release && 'release' || 'dev' }}
 
@@ -43,7 +39,10 @@ jobs:
     strategy:
       matrix:
         target: [x86_64, aarch64]
-        py: ${{ env.pymatrix }}
+        # If this workflow is called to build for release, build using
+        # only one Python version, which is the lowest ABI version set
+        # in PyO3 features.
+        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.12"]') }}
     env:
       DISPLAY: :0
     steps:
@@ -79,7 +78,10 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        py: ${{ env.pymatrix }}
+        # If this workflow is called to build for release, build using
+        # only one Python version, which is the lowest ABI version set
+        # in PyO3 features.
+        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.12"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -111,7 +113,10 @@ jobs:
     strategy:
       matrix:
         target: [x86_64, aarch64]
-        py: ${{ env.pymatrix }}
+        # If this workflow is called to build for release, build using
+        # only one Python version, which is the lowest ABI version set
+        # in PyO3 features.
+        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.12"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
