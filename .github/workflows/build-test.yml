@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels
-          path: dist
+          path: dist/wheels
 
   windows:
     name: Build & test on Windows
@@ -107,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels
-          path: dist
+          path: dist/wheels
 
   macos:
     name: Build & test on MacOS
@@ -141,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels
-          path: dist
+          path: dist/wheels
 
   output_run_id:
     name: Export workflow run ID to the caller
