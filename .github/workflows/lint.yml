@@ -1,0 +1,17 @@
+name: Lint
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Run linters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - uses: Klavionik/pre-commit-action@main
+        with:
+          extra_args: "--hook-stage manual"
