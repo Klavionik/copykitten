@@ -58,12 +58,16 @@ jobs:
         run: Xvfb :0 -screen 0 800x600x16 &
       - name: Setup venv
         run: python -m venv .venv
-      - name: Build extension module and install package
+      - name: Build extension module
         uses: PyO3/maturin-action@v1
         with:
-          command: develop
+          command: build
           target: ${{ matrix.target }}
-          args: --profile ${{ env.build_profile }} --target-dir dist
+          args: --profile ${{ env.build_profile }} --out dist
+      - name: Install package
+        run: |
+          source .venv/bin/activate
+          pip install dist/*
       - name: Run tests
         run: |
           source .venv/bin/activate
@@ -91,12 +95,17 @@ jobs:
           python-version: ${{ matrix.py }}
       - name: Setup venv
         run: python -m venv .venv
-      - name: Build extension module and install package
+      - name: Build extension module
         uses: PyO3/maturin-action@v1
         with:
-          command: develop
+          command: build
           target: x64
-          args: --profile ${{ env.build_profile }} --target-dir dist
+          args: --profile ${{ env.build_profile }} --out dist
+      - name: Install package
+        shell: powershell
+        run: |
+          .venv/Scripts/activate.ps1
+          pip install dist/*
       - name: Run tests
         shell: powershell
         run: |
@@ -107,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels
-          path: dist/wheels
+          path: dist
 
   macos:
     name: Build & test on MacOS
@@ -126,12 +135,16 @@ jobs:
           python-version: ${{ matrix.py }}
       - name: Setup venv
         run: python -m venv .venv
-      - name: Build extension module and install package
+      - name: Build extension module
         uses: PyO3/maturin-action@v1
         with:
-          command: develop
+          command: build
           target: ${{ matrix.target }}
-          args: --profile ${{ env.build_profile }} --target-dir dist
+          args: --profile ${{ env.build_profile }} --out dist
+      - name: Install package
+        run: |
+          source .venv/bin/activate
+          pip install dist/*
       - name: Run tests
         run: |
           source .venv/bin/activate
@@ -141,7 +154,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels
-          path: dist/wheels
+          path: dist
 
   output_run_id:
     name: Export workflow run ID to the caller
