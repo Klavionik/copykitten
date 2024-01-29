@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "copykitten"
-requires-python = ">=3.8,<=3.12"
+requires-python = ">=3.8,<3.13"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
