@@ -40,7 +40,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64, aarch64]
+        # If this workflow is called to build for release, build for x64 and ARM64
+        # processors. However, run tests only for x64, as GH doesn't provide
+        # ARM64 runners.
+        target: ${{ inputs.release && fromJSON('["x64", "aarch64"]') || fromJSON('["x64"]') }}
         # If this workflow is called to build for release, build using
         # only one Python version, which is the lowest ABI version set
         # in PyO3 features.
@@ -61,16 +64,14 @@ jobs:
       - name: Build extension module
         uses: PyO3/maturin-action@v1
         with:
-          command: build
           target: ${{ matrix.target }}
           args: --profile ${{ env.build_profile }} --out dist
-      - name: Install package
+          manylinux: auto
+      - name: Run tests
+        if: ${{ matrix.target == 'x64' }}
         run: |
           source .venv/bin/activate
           pip install dist/*
-      - name: Run tests
-        run: |
-          source .venv/bin/activate
           python -m unittest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
@@ -98,18 +99,13 @@ jobs:
       - name: Build extension module
         uses: PyO3/maturin-action@v1
         with:
-          command: build
           target: x64
           args: --profile ${{ env.build_profile }} --out dist
-      - name: Install package
-        shell: powershell
-        run: |
-          .venv/Scripts/activate.ps1
-          pip install dist/*
       - name: Run tests
         shell: powershell
         run: |
-          .venv/Scripts/activate.ps1
+          .venv\Scripts\activate.ps1
+          pip install dist\$(Get-ChildItem -Name dist\*.whl)
           python -m unittest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
@@ -123,7 +119,10 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        target: [x86_64, aarch64]
+        # If this workflow is called to build for release, build for x64 and ARM64
+        # processors. However, run tests only for x64, as GH doesn't provide
+        # ARM64 runners.
+        target: ${{ inputs.release && fromJSON('["x64", "aarch64"]') || fromJSON('["x64"]') }}
         # If this workflow is called to build for release, build using
         # only one Python version, which is the lowest ABI version set
         # in PyO3 features.
@@ -138,16 +137,13 @@ jobs:
       - name: Build extension module
         uses: PyO3/maturin-action@v1
         with:
-          command: build
           target: ${{ matrix.target }}
           args: --profile ${{ env.build_profile }} --out dist
-      - name: Install package
+      - name: Run tests
+        if: ${{ matrix.target == 'x64' }}
         run: |
           source .venv/bin/activate
           pip install dist/*
-      - name: Run tests
-        run: |
-          source .venv/bin/activate
           python -m unittest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
