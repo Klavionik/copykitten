@@ -144,6 +144,7 @@ jobs:
           path: target/wheels
 
   output_run_id:
+    name: Export workflow run ID to the caller
     if: ${{ inputs.release }}
     runs-on: ubuntu-latest
     env:
@@ -151,6 +152,5 @@ jobs:
     outputs:
       run_id: ${{ steps.export.outputs.run_id }}
     steps:
-      - name: Export workflow run ID to the caller
-        id: export
+      - id: export
         run: echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
