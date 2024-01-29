@@ -22,7 +22,7 @@ jobs:
           name: wheels
           path: dist
           github-token: ${{ github.token }}
-          run-id: ${{ needs.job1.outputs.run_id }}
+          run-id: ${{ needs.build.outputs.run_id }}
       - uses: actions/checkout@v3
       - name: Build sdist
         uses: PyO3/maturin-action@v1
