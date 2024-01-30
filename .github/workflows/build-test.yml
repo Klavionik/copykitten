@@ -112,7 +112,7 @@ jobs:
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ runner.os }}-${{ matrix.target }}
+          name: wheels-${{ runner.os }}
           path: dist
 
   macos:
