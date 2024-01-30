@@ -38,8 +38,9 @@ dependencies are installed on the target machine, otherwise they won’t work.
 There are some solutions using the Tkinter library, which comes with the standard Python suite. However, these solutions
 are fragile and may leave your app unresponsive.
 
-Copykitten is a lightweight wrapper around the Rust [arboard](https://github.com/1Password/arboard) library. It comes with pre-built wheels for Linux,
-MacOS, Windows, and ARM64, so you don't have to worry about anything.
+Copykitten is a lightweight wrapper around the Rust [arboard](https://github.com/1Password/arboard) library. It comes
+with pre-built wheels for Linux (x64, ARM64), macOS (x64, ARM64), and Windows (x64), so you don't have to worry about
+anything.
 
 # What's in a name?
 You can’t even imagine, how many Python packages devoted to the clipboard management there are on PyPI! Most of them
