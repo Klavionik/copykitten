@@ -6,7 +6,7 @@ class CopykittenError(Exception):
 
     More on arboard errors: https://docs.rs/arboard/latest/arboard/enum.Error.html
     """
-    pass
+    ...
 
 
 def copy(content: str) -> None:
@@ -27,14 +27,16 @@ def paste() -> str:
     as a UTF-8 string.
 
     :return: Clipboard content.
-    :raises CopykittenError: Raised if fetching clipboard content failed.
+    :raises CopykittenError: Raised if fetching clipboard content failed
+      or the clipboard is empty (on Windows and macOS).
     """
     ...
 
 
 def clear() -> None:
     """
-    Clears the clipboard (basically, sets it to an empty string).
+    Clears the clipboard. Calling `copykitten.paste()` after this
+    may raise an error on Windows and macOS due to the empty clipboard.
 
     :raises CopykittenError: Raised if the clear operation failed.
     """

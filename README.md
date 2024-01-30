@@ -20,12 +20,12 @@ import copykitten
 copykitten.copy("The kitten says meow")
 
 content = copykitten.paste()
-print(content) # "The kitten says meow"
+print(content) # >>> "The kitten says meow"
 
 copykitten.clear()
-content = copykitten.paste()
+content = copykitten.paste() # Careful! May raise on Windows and macOS.
 
-print(content) # ""
+print(content) # >>> ""
 ```
 
 # Rationale
