@@ -8,16 +8,14 @@ on:
       - "**.rs"
       - "Cargo.*"
       - "pyproject.toml"
-      - "README.md"
   push:
     branches:
-      - "*"
+      - "main"
     paths:
       - "**.pyi?"
       - "**.rs"
       - "Cargo.*"
       - "pyproject.toml"
-      - "README.md"
   workflow_call:
     inputs:
       release:
