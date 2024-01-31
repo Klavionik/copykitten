@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2024-01-31
+- Add more project metadata to be shown on PyPI and some nice badges.
+
 ## [1.0.0] - 2024-01-31
 - First public release.
 - Copykitten can `copy`, `paste`, and `clear` the clipboard.
