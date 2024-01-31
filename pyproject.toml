@@ -4,6 +4,12 @@ build-backend = "maturin"
 
 [project]
 name = "copykitten"
+description = "A robust, dependency-free way to use the system clipboard in Python."
+authors = [{ name = "Roman Vlasenko", email = "klavionik@gmail.com" }]
+readme = "README.md"
+homepage = "https://github.com/Klavionik/copykitten"
+license = "MIT"
+keywords = ["clipboard"]
 requires-python = ">=3.8,<3.13"
 classifiers = [
     "Programming Language :: Rust",
@@ -14,6 +20,11 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 dynamic = ["version"]
 
