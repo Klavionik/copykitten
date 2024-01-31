@@ -1,5 +1,9 @@
 # copykitten
-`copykitten` provides a robust, dependency-free way to use the system clipboard in Python.
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI - Version](https://img.shields.io/pypi/v/copykitten)](https://pypi.org/project/copykitten)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/copykitten)
+
+A robust, dependency-free way to use the system clipboard in Python.
 
 # Installation
 `copykitten` supports Python >= 3.8.
