@@ -22,3 +22,7 @@ line-length = 100
 
 [tool.isort]
 profile = "black"
+
+[tool.maturin]
+python-source = "python"
+module-name = "copykitten._copykitten"
