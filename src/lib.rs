@@ -48,7 +48,7 @@ fn clear() -> PyResult<()> {
 }
 
 #[pymodule]
-fn copykitten(py: Python, module: &PyModule) -> PyResult<()> {
+fn _copykitten(py: Python, module: &PyModule) -> PyResult<()> {
     let clipboard =
         arboard::Clipboard::new().map_err(|_| raise_exc("Cannot initialize clipboard"))?;
     CLIPBOARD
