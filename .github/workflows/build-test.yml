@@ -70,14 +70,22 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install dist/*
-          python -m unittest -v
+          pip install -r requirements-dev.txt
+          coverage -m unittest -v
+          coverage xml
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ runner.os }}-${{ matrix.target }}
           path: dist
-
+        # Test suite is the same for every supported OS,
+        # so upload coverage report only once.
+      - name: Upload coverage report
+        if: ${{ matrix.target == 'x64' }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   windows:
     name: Build & test on Windows
