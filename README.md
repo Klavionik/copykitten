@@ -2,6 +2,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI - Version](https://img.shields.io/pypi/v/copykitten)](https://pypi.org/project/copykitten)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/copykitten)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/copykitten)](https://pypistats.org/packages/copykitten)
+
 
 A robust, dependency-free way to use the system clipboard in Python.
 
