@@ -1,9 +1,19 @@
 import os
+from io import BytesIO
 from time import sleep
 from unittest import TestCase
 
+from PIL import Image
+
 import copykitten
-from tests.utils import read_clipboard, write_clipboard
+from tests.utils import (
+    IMAGE_SIZE,
+    generate_image,
+    read_clipboard,
+    read_clipboard_image,
+    write_clipboard,
+    write_clipboard_image,
+)
 
 DEFAULT_ITERATIONS = 100
 DEFAULT_SLEEP_TIME = 0.1
@@ -58,3 +68,28 @@ class TestClipboard(TestCase):
                 actual = read_clipboard()
 
                 self.assertEqual(actual, "")
+
+    def test_copy_image(self):
+        for _ in range(ITERATIONS):
+            image = generate_image()
+            image_bytes = image.tobytes()
+            copykitten.copy_image(image_bytes, IMAGE_SIZE, IMAGE_SIZE)
+            sleep(SLEEP_TIME)
+            buffer = BytesIO(read_clipboard_image())
+            actual = Image.open(buffer, formats=["png"])
+            actual_bytes = actual.tobytes()
+
+            self.assertEqual(image_bytes, actual_bytes)
+
+    def test_paste_image(self):
+        for _ in range(ITERATIONS):
+            image = generate_image()
+            buffer = BytesIO()
+            image.save(buffer, format="png")
+            write_clipboard_image(buffer.getvalue())
+            sleep(SLEEP_TIME)
+            img, width, height = copykitten.paste_image()
+
+            self.assertEqual(image.tobytes(), img)
+            self.assertEqual(width, IMAGE_SIZE)
+            self.assertEqual(height, IMAGE_SIZE)
