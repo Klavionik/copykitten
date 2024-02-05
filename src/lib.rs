@@ -2,6 +2,7 @@ extern crate core;
 
 use pyo3::create_exception;
 use pyo3::prelude::*;
+use std::borrow::Cow;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
@@ -33,11 +34,32 @@ fn copy(content: &str) -> PyResult<()> {
 }
 
 #[pyfunction]
+fn copy_image(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
+    let mut cb = get_clipboard()?;
+    let image = arboard::ImageData {
+        bytes: content,
+        width,
+        height,
+    };
+
+    cb.set_image(image).map_err(to_exc)?;
+    Ok(())
+}
+
+#[pyfunction]
 fn paste() -> PyResult<String> {
     let mut cb = get_clipboard()?;
     let content = cb.get_text().map_err(to_exc)?;
 
     Ok(content)
+}
+
+#[pyfunction]
+fn paste_image() -> PyResult<(Cow<'static, [u8]>, usize, usize)> {
+    let mut cb = get_clipboard()?;
+    let image = cb.get_image().map_err(to_exc)?;
+
+    Ok((image.bytes, image.width, image.height))
 }
 
 #[pyfunction]
@@ -58,5 +80,7 @@ fn _copykitten(py: Python, module: &PyModule) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(paste, module)?)?;
     module.add_function(wrap_pyfunction!(clear, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_image, module)?)?;
+    module.add_function(wrap_pyfunction!(paste_image, module)?)?;
     Ok(())
 }

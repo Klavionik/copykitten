@@ -41,3 +41,11 @@ def clear() -> None:
     :raises CopykittenError: Raised if the clear operation failed.
     """
     ...
+
+
+def copy_image(content: bytes, width: int, height: int) -> None:
+    ...
+
+
+def paste_image() -> (bytes, int, int):
+    ...
