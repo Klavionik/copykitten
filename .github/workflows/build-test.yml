@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
       - name: Install test dependencies
-        run:  sudo apt-get update & sudo apt-get install -y xvfb xsel
+        run:  sudo apt-get update & sudo apt-get install -y xvfb xclip
       - name: Run virtual X11 server
         run: Xvfb :0 -screen 0 800x600x16 &
       - name: Setup venv

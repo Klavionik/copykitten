@@ -4,7 +4,7 @@ import sys
 try:
     clipboard_read_cmd, clipboard_write_cmd = dict(
         win32=(("powershell.exe", "Get-Clipboard"), ("powershell.exe", "Set-Clipboard")),
-        linux=(("xsel", "-b"), ("xsel", "-b")),
+        linux=(("xclip", "-sel", "clipboard", "-o"), ("xclip", "-sel", "clipboard", "-i")),
         darwin=("pbpaste", "pbcopy"),
     )[sys.platform]
 except KeyError:
@@ -26,4 +26,4 @@ def write_clipboard(content: str) -> None:
     if sys.platform == "win32":
         subprocess.check_call((*clipboard_write_cmd, content))
     else:
-        subprocess.check_output(clipboard_write_cmd, input=content, text=True)
+        subprocess.run(clipboard_write_cmd, input=content, text=True)
