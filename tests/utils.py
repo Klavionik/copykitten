@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import tempfile
 
 from PIL import Image
 
@@ -20,6 +21,18 @@ try:
         linux=(
             ("xclip", "-sel", "clipboard", "-o", "-target", "image/png"),
             ("xclip", "-sel", "clipboard", "-i", "-target", "image/png"),
+        ),
+        darwin=(
+            ("osascript", "-e", "get the clipboard as «class PNGf»"),
+            (
+                "osascript",
+                "-e",
+                "on run args",
+                "-e",
+                "set the clipboard to (read POSIX file (first item of args) as JPEG picture)",
+                "-e",
+                "end",
+            ),
         ),
     )[sys.platform]
 except KeyError:
@@ -45,11 +58,27 @@ def write_clipboard(content: str) -> None:
 
 
 def read_clipboard_image() -> bytes:
-    return subprocess.check_output(clipboard_read_image_cmd)
+    data = subprocess.check_output(clipboard_read_image_cmd)
+
+    if sys.platform == "darwin":
+        # On macOS `data` looks like this: '«data PNGf<hex-string>»\n'.
+        # So it has to be stripped and converted from hex.
+        hex_string = data[11:-3].decode()
+        return bytes.fromhex(hex_string)
+
+    return data
 
 
 def write_clipboard_image(content: bytes) -> None:
-    subprocess.run(clipboard_write_image_cmd, input=content)
+    if sys.platform == "darwin":
+        # AppleScript can't read from stdin, but can read from a file.
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+            tmp.write(content)
+            tmp.seek(0)
+            cmd = (*clipboard_write_image_cmd, tmp.name)
+            subprocess.run(cmd, check=True)
+    else:
+        subprocess.run(clipboard_write_image_cmd, input=content, check=True)
 
 
 def generate_image() -> Image:

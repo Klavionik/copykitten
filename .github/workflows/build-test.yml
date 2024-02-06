@@ -144,6 +144,7 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install dist/*
+          pip install -r requirements-dev.txt
           python -m unittest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
