@@ -1,10 +1,11 @@
+import pathlib
 import subprocess
 import sys
 import tempfile
 
-from PIL import Image
-
-IMAGE_SIZE = 10
+IMAGE_DIR = pathlib.Path().resolve().parent / "fixtures"
+JPEG_IMAGE = IMAGE_DIR / "kitten.jpeg"
+PNG_IMAGE = IMAGE_DIR / "kitten.png"
 
 try:
     clipboard_read_cmd, clipboard_write_cmd = dict(
@@ -79,7 +80,3 @@ def write_clipboard_image(content: bytes) -> None:
             subprocess.run(cmd, check=True)
     else:
         subprocess.run(clipboard_write_image_cmd, input=content, check=True)
-
-
-def generate_image() -> Image:
-    return Image.new(mode="RGBA", size=(IMAGE_SIZE, IMAGE_SIZE), color="red")
