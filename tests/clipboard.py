@@ -25,7 +25,7 @@ def read_image_macos() -> Image.Image:
     # On macOS data looks like this: '«data PNGf<hex-string>»\n'.
     # So it has to be stripped and converted from hex.
     hex_string = data[11:-3].decode()
-    content = bytes.fromhex(hex_string)
+    content = io.BytesIO(bytes.fromhex(hex_string))
     return Image.open(content, formats=["png"])
 
 
