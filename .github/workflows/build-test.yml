@@ -71,7 +71,7 @@ jobs:
           source .venv/bin/activate
           pip install dist/*
           pip install -r requirements-dev.txt
-          python -m unittest -v
+          pytest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
@@ -106,7 +106,8 @@ jobs:
         run: |
           .venv\Scripts\activate.ps1
           pip install dist\$(Get-ChildItem -Name dist\*.whl)
-          python -m unittest -v
+          pip install -r requirements-dev.txt
+          pytest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
@@ -145,7 +146,7 @@ jobs:
           source .venv/bin/activate
           pip install dist/*
           pip install -r requirements-dev.txt
-          python -m unittest -v
+          pytest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
