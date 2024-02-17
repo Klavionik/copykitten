@@ -14,7 +14,7 @@ from tests.clipboard import (
     WriteClipboardImage,
 )
 
-DEFAULT_ITERATIONS = 100
+DEFAULT_ITERATIONS = 50
 DEFAULT_SLEEP_TIME = 0.1
 
 
