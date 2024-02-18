@@ -17,21 +17,66 @@ pip install copykitten
 ```
 
 # Usage
-The package API consists of three Python functions: `copy`, `paste`, `clear`.
+## Text
+To copy or paste text content, use `copykitten.copy` and `copykitten.paste` functions.
 
-In a nutshell:
 ```python
 import copykitten
 
 copykitten.copy("The kitten says meow")
+```
 
-content = copykitten.paste()
-print(content) # >>> "The kitten says meow"
+```python
+import copykitten
+
+text = copykitten.paste()
+```
+
+## Image
+To copy or paste images, use `copykitten.copy_image` and `copykitten.paste_image` functions.
+Working with images is a bit complex, so read further.
+
+```python
+import copykitten
+from PIL import Image
+
+image = Image.open("image.png")
+pixels = image.tobytes()
+
+copykitten.copy_image(pixels, image.width, image.height)
+```
+
+```python
+import copykitten
+from PIL import Image
+
+pixels, width, height = copykitten.paste_image()
+image = Image.frombytes(mode="RGBA", size=(width, height), data=pixels)
+image.save("image.png")
+```
+
+To copy an image to the clipboard, you have to pass three arguments - pixel data, width, and height.
+Pixel data must be a `bytes` object containing the raw RGBA value for each pixel. You can easily get it using an imaging
+library like [Pillow](https://github.com/python-pillow/Pillow).
+
+If your image is not of RGBA type (like a typical JPEG, which is RGB), you first have to convert it to RGBA, otherwise
+`copy_image` will raise an exception.
+
+When pasting an image from the clipboard you will receive a 3-tuple of (pixels, width, height). Pixels here are the same
+RGBA `bytes` object. Please note that it is not guaranteed that any image copied to the clipboard by another program
+will be successfully pasted with `copykitten`.
+
+You can read more about the [data format](https://docs.rs/arboard/latest/arboard/struct.ImageData.html) and the
+[implications](https://docs.rs/arboard/latest/arboard/struct.Clipboard.html#method.get_image) of working with images in
+the `arboard` documentation.
+
+## Clear
+To clear the clipboard, use `copykitten.clear` function.
+
+```python
+import copykitten
 
 copykitten.clear()
-content = copykitten.paste() # Careful! May raise on Windows and macOS.
-
-print(content) # >>> ""
 ```
 
 # Rationale
