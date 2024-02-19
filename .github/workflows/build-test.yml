@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
       - name: Install test dependencies
-        run:  sudo apt-get update & sudo apt-get install -y xvfb xsel
+        run:  sudo apt-get update & sudo apt-get install -y xvfb xclip
       - name: Run virtual X11 server
         run: Xvfb :0 -screen 0 800x600x16 &
       - name: Setup venv
@@ -70,7 +70,8 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install dist/*
-          python -m unittest -v
+          pip install -r requirements-dev.txt
+          pytest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
@@ -105,7 +106,8 @@ jobs:
         run: |
           .venv\Scripts\activate.ps1
           pip install dist\$(Get-ChildItem -Name dist\*.whl)
-          python -m unittest -v
+          pip install -r requirements-dev.txt
+          pytest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4
@@ -143,7 +145,8 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install dist/*
-          python -m unittest -v
+          pip install -r requirements-dev.txt
+          pytest -v
       - name: Update build artifact
         if: ${{ inputs.release }}
         uses: actions/upload-artifact@v4

@@ -41,3 +41,26 @@ def clear() -> None:
     :raises CopykittenError: Raised if the clear operation failed.
     """
     ...
+
+
+def copy_image(content: bytes, width: int, height: int) -> None:
+    """
+    Copies given image data to the clipboard.
+
+    :param content: Raw RGBA image data.
+    :param width: Image width.
+    :param height: Image height.
+    :raises CopykittenError: Raised if the image cannot be copied into the clipboard.
+    :raises TypeError: Raised if `content` is not bytes or `width`/`height` is not an integer.
+    """
+    ...
+
+
+def paste_image() -> (bytes, int, int):
+    """
+    Returns image data from the clipboard.
+
+    :raises CopykittenError: Raised if there's no image in the clipboard or the image is of incorrect format.
+    :return: A 3-tuple of raw RGBA pixels, width, and height.
+    """
+    ...
