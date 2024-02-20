@@ -56,7 +56,7 @@ def copy_image(content: bytes, width: int, height: int) -> None:
     ...
 
 
-def paste_image() -> (bytes, int, int):
+def paste_image() -> tuple[bytes, int, int]:
     """
     Returns image data from the clipboard.
 
