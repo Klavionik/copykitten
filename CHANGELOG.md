@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2024-02-20
+### Fixed
+- Fix `paste_image` return type.
+
 ## [1.1.0] - 2024-02-19
 ### Added
 - Added support for image copying/pasting with `copy_image`/`paste_image` functions.
