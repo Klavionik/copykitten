@@ -1,6 +1,4 @@
 import sys
-from io import BytesIO
-from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -11,18 +9,18 @@ from tests.clipboard import (
     WriteClipboard,
     WriteClipboardImage,
     read_image_linux,
+    read_image_macos,
+    read_image_win,
     read_linux,
+    read_macos,
+    read_win,
     write_image_linux,
-    write_linux, read_win, write_win, read_image_win, write_image_win, read_macos, read_image_macos, write_macos, write_image_macos
+    write_image_macos,
+    write_image_win,
+    write_linux,
+    write_macos,
+    write_win,
 )
-
-IMAGE_DIR = Path(__file__).resolve().parent / "fixtures"
-JPG_IMAGE = IMAGE_DIR / "kitten.jpeg"
-PNG_IMAGE = IMAGE_DIR / "kitten.png"
-
-
-DEFAULT_ITERATIONS = 100
-DEFAULT_SLEEP_TIME = 0.1
 
 
 @pytest.fixture(scope="session")

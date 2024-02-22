@@ -1,6 +1,5 @@
 import os
 import sys
-from io import BytesIO
 from time import sleep
 
 import pytest
@@ -49,6 +48,7 @@ def test_clear(read_clipboard: ReadClipboard, write_clipboard: WriteClipboard):
     sleep(SLEEP_TIME)
     copykitten.clear()
     sleep(SLEEP_TIME)
+
     actual = read_clipboard()
 
     assert actual == ""
@@ -68,15 +68,19 @@ def test_copy_image(test_image: Image.Image, read_clipboard_image: ReadClipboard
     test_image_bytes = test_image.tobytes()
     copykitten.copy_image(test_image_bytes, test_image.width, test_image.height)
     sleep(SLEEP_TIME)
+
     pasted_image = read_clipboard_image()
 
     assert test_image_bytes == pasted_image.tobytes()
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="No way to reliably assert result on Windows yet")
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="No way to reliably assert result on Windows yet"
+)
 def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipboardImage):
     write_clipboard_image(test_image)
     sleep(SLEEP_TIME)
+
     pasted_image, width, height = copykitten.paste_image()
 
     assert test_image.tobytes() == pasted_image

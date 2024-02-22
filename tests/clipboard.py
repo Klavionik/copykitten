@@ -61,14 +61,17 @@ def write_win(content: str) -> None:
 def read_image_win() -> Image.Image:
     tmp_dir = tempfile.gettempdir()
     tmp_file = Path(tmp_dir) / "pasted_image.png"
-    subprocess.run((
-        "powershell.exe",
-        "Add-Type",
-        "-Assembly",
-        "System.Drawing,",
-        "System.Windows.Forms;",
-        "[System.Windows.Forms.Clipboard]::GetImage().Save(\"%s\")" % tmp_file
-    ), check=True)
+    subprocess.run(
+        (
+            "powershell.exe",
+            "Add-Type",
+            "-Assembly",
+            "System.Drawing,",
+            "System.Windows.Forms;",
+            '[System.Windows.Forms.Clipboard]::GetImage().Save("%s")' % tmp_file,
+        ),
+        check=True,
+    )
 
     try:
         img = Image.open(tmp_file)
@@ -81,18 +84,22 @@ def read_image_win() -> Image.Image:
 
 def write_image_win(img: Image.Image) -> None:
     tmp_dir = tempfile.gettempdir()
-    tmp_file = Path(tmp_dir) / f"copied_image.png"
+    tmp_file = Path(tmp_dir) / "copied_image.png"
 
     try:
         img.save(tmp_file)
-        subprocess.run((
+        subprocess.run(
+            (
                 "powershell.exe",
                 "Add-Type",
                 "-Assembly",
                 "System.Drawing,",
                 "System.Windows.Forms;",
-                "[System.Windows.Forms.Clipboard]::SetImage([System.Drawing.Image]::FromFile(\"%s\"))" % tmp_file
-            ), check=True)
+                '[System.Windows.Forms.Clipboard]::SetImage([System.Drawing.Image]::FromFile("%s"))'
+                % tmp_file,
+            ),
+            check=True,
+        )
     finally:
         tmp_file.unlink()
 
@@ -115,5 +122,7 @@ def write_image_linux(img: Image.Image) -> None:
     buffer = io.BytesIO()
     img.save(buffer, format="png")
     subprocess.run(
-        ("xclip", "-sel", "clipboard", "-i", "-target", "image/png"), input=buffer.getvalue(), check=True
+        ("xclip", "-sel", "clipboard", "-i", "-target", "image/png"),
+        input=buffer.getvalue(),
+        check=True,
     )
