@@ -1,8 +1,9 @@
 import io
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Generic, TypeVar, cast
 
 from PIL import Image
 
@@ -10,6 +11,32 @@ ReadClipboard = Callable[[], str]
 WriteClipboard = Callable[[str], None]
 ReadClipboardImage = Callable[[], Image.Image]
 WriteClipboardImage = Callable[[Image.Image], None]
+
+T = TypeVar("T")
+
+
+class Resolver(Generic[T]):
+    platform_mapping = {"win32": "win", "linux": "linux", "darwin": "macos"}
+
+    def __set_name__(self, _, name):
+        self.action = name
+
+    def __get__(self, _, __) -> T:
+        variables = globals()
+        platform = self.platform_mapping[sys.platform]
+        function_name = f"{self.action}_{platform}"
+
+        try:
+            return cast(T, variables[function_name])
+        except KeyError:
+            raise RuntimeError(f"Cannot find suitable clipboard for {sys.platform}.")
+
+
+class Clipboard:
+    read = Resolver[ReadClipboard]()
+    write = Resolver[WriteClipboard]()
+    read_image = Resolver[ReadClipboardImage]()
+    write_image = Resolver[WriteClipboardImage]()
 
 
 def read_macos() -> str:
