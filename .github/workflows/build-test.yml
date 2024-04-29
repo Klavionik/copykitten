@@ -70,7 +70,6 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install dist/*
-          pip install -U pip
           pip install -r requirements-dev.txt
           pytest -v
       - name: Update build artifact
@@ -107,7 +106,6 @@ jobs:
         run: |
           .venv\Scripts\activate.ps1
           pip install dist\$(Get-ChildItem -Name dist\*.whl)
-          pip install -U pip
           pip install -r requirements-dev.txt
           pytest -v
       - name: Update build artifact
@@ -146,7 +144,6 @@ jobs:
         if: ${{ matrix.target == 'x64' }}
         run: |
           source .venv/bin/activate
-          python -m pip install -U pip
           pip install dist/*
           pip install -r requirements-dev.txt
           pytest -v
