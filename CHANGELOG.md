@@ -6,11 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-# [1.2.1] - 2024-08-26
+## [1.2.1] - 2024-08-26
 ### Fixed
 - Initialize the inner clipboard instance lazily to prevent import-time errors in headless environments.
 
-# [1.2.0] - 2024-04-29
+## [1.2.0] - 2024-04-29
 ### Changed
 - Update `arboard` to 3.4.0.
 
