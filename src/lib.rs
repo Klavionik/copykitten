@@ -3,11 +3,16 @@ extern crate core;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::{LazyLock, Mutex, MutexGuard};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
-static CLIPBOARD: OnceLock<Mutex<arboard::Clipboard>> = OnceLock::new();
+static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
+
+fn initialize_clipboard() -> Option<Mutex<arboard::Clipboard>> {
+    let maybe_clipboard = arboard::Clipboard::new().ok();
+    maybe_clipboard.map(Mutex::new)
+}
 
 fn raise_exc(text: &'static str) -> PyErr {
     CopykittenError::new_err(text)
@@ -18,9 +23,11 @@ fn to_exc(err: arboard::Error) -> PyErr {
 }
 
 fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
-    CLIPBOARD
-        .get()
-        .ok_or(raise_exc("Clipboard was never initialized."))?
+    let mutex = CLIPBOARD
+        .as_ref()
+        .ok_or(raise_exc("Clipboard was never initialized."))?;
+
+    mutex
         .lock()
         .map_err(|_| raise_exc("Cannot get lock on the clipboard, the lock is poisoned."))
 }
@@ -71,11 +78,6 @@ fn clear() -> PyResult<()> {
 
 #[pymodule]
 fn _copykitten(py: Python, module: &PyModule) -> PyResult<()> {
-    let clipboard =
-        arboard::Clipboard::new().map_err(|_| raise_exc("Cannot initialize clipboard"))?;
-    CLIPBOARD
-        .set(Mutex::new(clipboard))
-        .map_err(|_| raise_exc("Global clipboard already created."))?;
     module.add("CopykittenError", py.get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(paste, module)?)?;
