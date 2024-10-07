@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2024-10-07
+### Changed
+- The package can now be installed using any Python version higher than 3.7.
+
 ## [1.2.1] - 2024-08-27
 ### Fixed
 - Initialize the inner clipboard instance lazily to prevent import-time errors in headless environments.
