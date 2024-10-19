@@ -45,7 +45,7 @@ jobs:
         # If this workflow is called to build for release, build using
         # only one Python version, which is the lowest ABI version set
         # in PyO3 features.
-        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.12"]') }}
+        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.13"]') }}
     env:
       DISPLAY: :0
     steps:
@@ -88,7 +88,7 @@ jobs:
         # If this workflow is called to build for release, build using
         # only one Python version, which is the lowest ABI version set
         # in PyO3 features.
-        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.12"]') }}
+        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.13"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -127,7 +127,7 @@ jobs:
         # If this workflow is called to build for release, build using
         # only one Python version, which is the lowest ABI version set
         # in PyO3 features.
-        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.12"]') }}
+        py: ${{ inputs.release && fromJSON('["3.8"]') || fromJSON('["3.8", "3.13"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
