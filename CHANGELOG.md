@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2024-10-20
+- Add Python 3.13 PyPI classifier.
+
 ## [1.2.2] - 2024-10-07
 ### Changed
 - The package can now be installed using any Python version higher than 3.7.
