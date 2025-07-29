@@ -49,16 +49,14 @@ fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
 #[pyfunction]
 #[pyo3(signature = (content, *, wait=false))]
 fn copy(content: &str, wait: bool) -> PyResult<()> {
-    #[allow(clippy::collapsible_if)]
-    if cfg!(target_os = "linux") {
-        if wait {
-            let _ = with_daemon(|()| {
-                let mut cb = get_clipboard().unwrap();
-                cb.set().wait().text(content).unwrap();
-            });
+    #[cfg(target_os = "linux")]
+    if wait {
+        let _ = with_daemon(|()| {
+            let mut cb = get_clipboard().unwrap();
+            cb.set().wait().text(content).unwrap();
+        });
 
-            return Ok(());
-        }
+        return Ok(());
     }
 
     let mut cb = get_clipboard()?;
@@ -76,16 +74,14 @@ fn copy_image(content: Cow<[u8]>, width: usize, height: usize, wait: bool) -> Py
         height,
     };
 
-    #[allow(clippy::collapsible_if)]
-    if cfg!(target_os = "linux") {
-        if wait {
-            let _ = with_daemon(|()| {
-                let mut cb = get_clipboard().unwrap();
-                cb.set().wait().image(image).map_err(to_exc).unwrap();
-            });
+    #[cfg(target_os = "linux")]
+    if wait {
+        let _ = with_daemon(|()| {
+            let mut cb = get_clipboard().unwrap();
+            cb.set().wait().image(image).map_err(to_exc).unwrap();
+        });
 
-            return Ok(());
-        }
+        return Ok(());
     }
 
     let mut cb = get_clipboard()?;
