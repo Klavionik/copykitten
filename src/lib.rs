@@ -2,6 +2,7 @@ extern crate core;
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
+#[cfg(target_os = "linux")]
 use daemonize::Daemonize;
 use pyo3::create_exception;
 use pyo3::prelude::*;
@@ -38,16 +39,19 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 #[pyfunction]
 #[pyo3(signature = (content, *, wait=false))]
 fn copy(content: &str, wait: bool) -> PyResult<()> {
-    if cfg!(target_os = "linux") && wait {
-        let daemon = Daemonize::new();
+    #[allow(clippy::collapsible_if)]
+    if cfg!(target_os = "linux") {
+        if wait {
+            let daemon = Daemonize::new();
 
-        return daemon
-            .start()
-            .map(|()| {
-                let mut cb = get_clipboard().unwrap();
-                cb.set().wait().text(content).map_err(to_exc).unwrap();
-            })
-            .map_err(|_| raise_exc("Couldn't daemonize."));
+            return daemon
+                .start()
+                .map(|()| {
+                    let mut cb = get_clipboard().unwrap();
+                    cb.set().wait().text(content).map_err(to_exc).unwrap();
+                })
+                .map_err(|_| raise_exc("Couldn't daemonize."));
+        }
     }
 
     let mut cb = get_clipboard()?;
@@ -65,16 +69,19 @@ fn copy_image(content: Cow<[u8]>, width: usize, height: usize, wait: bool) -> Py
         height,
     };
 
-    if cfg!(target_os = "linux") && wait {
-        let daemon = Daemonize::new();
+    #[allow(clippy::collapsible_if)]
+    if cfg!(target_os = "linux") {
+        if wait {
+            let daemon = Daemonize::new();
 
-        return daemon
-            .start()
-            .map(|()| {
-                let mut cb = get_clipboard().unwrap();
-                cb.set().wait().image(image).map_err(to_exc).unwrap();
-            })
-            .map_err(|_| raise_exc("Couldn't daemonize."));
+            return daemon
+                .start()
+                .map(|()| {
+                    let mut cb = get_clipboard().unwrap();
+                    cb.set().wait().image(image).map_err(to_exc).unwrap();
+                })
+                .map_err(|_| raise_exc("Couldn't daemonize."));
+        }
     }
 
     let mut cb = get_clipboard()?;
