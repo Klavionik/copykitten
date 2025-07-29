@@ -1,5 +1,8 @@
 extern crate core;
 
+#[cfg(target_os = "linux")]
+use arboard::SetExtLinux;
+use daemonize::Daemonize;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
@@ -33,7 +36,20 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 }
 
 #[pyfunction]
-fn copy(content: &str) -> PyResult<()> {
+#[pyo3(signature = (content, *, wait=false))]
+fn copy(content: &str, wait: bool) -> PyResult<()> {
+    if cfg!(target_os = "linux") && wait {
+        let daemon = Daemonize::new();
+
+        return daemon
+            .start()
+            .map(|()| {
+                let mut cb = get_clipboard().unwrap();
+                cb.set().wait().text(content).map_err(to_exc).unwrap();
+            })
+            .map_err(|_| raise_exc("Couldn't daemonize."));
+    }
+
     let mut cb = get_clipboard()?;
 
     cb.set_text(content).map_err(to_exc)?;
@@ -41,14 +57,27 @@ fn copy(content: &str) -> PyResult<()> {
 }
 
 #[pyfunction]
-fn copy_image(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
-    let mut cb = get_clipboard()?;
+#[pyo3(signature = (content, width, height, *, wait=false))]
+fn copy_image(content: Cow<[u8]>, width: usize, height: usize, wait: bool) -> PyResult<()> {
     let image = arboard::ImageData {
         bytes: content,
         width,
         height,
     };
 
+    if cfg!(target_os = "linux") && wait {
+        let daemon = Daemonize::new();
+
+        return daemon
+            .start()
+            .map(|()| {
+                let mut cb = get_clipboard().unwrap();
+                cb.set().wait().image(image).map_err(to_exc).unwrap();
+            })
+            .map_err(|_| raise_exc("Couldn't daemonize."));
+    }
+
+    let mut cb = get_clipboard()?;
     cb.set_image(image).map_err(to_exc)?;
     Ok(())
 }

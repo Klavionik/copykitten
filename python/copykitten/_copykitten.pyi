@@ -9,12 +9,13 @@ class CopykittenError(Exception):
     ...
 
 
-def copy(content: str) -> None:
+def copy(content: str, *, wait: bool = False) -> None:
     """
     Copies passed text content into the clipboard.
     Content must be a valid UTF-8 string.
 
     :param content: Text to copy.
+    :param wait: Keep content available after the process exit (until overwritten).
     :raises CopykittenError: Raised if copying failed.
     :raises TypeError: Raised if the content is not a string.
     """
@@ -43,13 +44,14 @@ def clear() -> None:
     ...
 
 
-def copy_image(content: bytes, width: int, height: int) -> None:
+def copy_image(content: bytes, width: int, height: int, *, wait: bool = False) -> None:
     """
     Copies given image data to the clipboard.
 
     :param content: Raw RGBA image data.
     :param width: Image width.
     :param height: Image height.
+    :param wait: Keep content available after the process exit (until overwritten).
     :raises CopykittenError: Raised if the image cannot be copied into the clipboard.
     :raises TypeError: Raised if `content` is not bytes or `width`/`height` is not an integer.
     """
