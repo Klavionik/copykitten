@@ -36,21 +36,28 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
         .map_err(|_| raise_exc("Cannot get lock on the clipboard, the lock is poisoned."))
 }
 
+#[cfg(target_os = "linux")]
+fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
+    let daemon = Daemonize::new();
+
+    daemon
+        .start()
+        .map(func)
+        .map_err(|_| raise_exc("Couldn't daemonize."))
+}
+
 #[pyfunction]
 #[pyo3(signature = (content, *, wait=false))]
 fn copy(content: &str, wait: bool) -> PyResult<()> {
     #[allow(clippy::collapsible_if)]
     if cfg!(target_os = "linux") {
         if wait {
-            let daemon = Daemonize::new();
+            let _ = with_daemon(|()| {
+                let mut cb = get_clipboard().unwrap();
+                cb.set().wait().text(content).unwrap();
+            });
 
-            return daemon
-                .start()
-                .map(|()| {
-                    let mut cb = get_clipboard().unwrap();
-                    cb.set().wait().text(content).map_err(to_exc).unwrap();
-                })
-                .map_err(|_| raise_exc("Couldn't daemonize."));
+            return Ok(());
         }
     }
 
@@ -72,15 +79,12 @@ fn copy_image(content: Cow<[u8]>, width: usize, height: usize, wait: bool) -> Py
     #[allow(clippy::collapsible_if)]
     if cfg!(target_os = "linux") {
         if wait {
-            let daemon = Daemonize::new();
+            let _ = with_daemon(|()| {
+                let mut cb = get_clipboard().unwrap();
+                cb.set().wait().image(image).map_err(to_exc).unwrap();
+            });
 
-            return daemon
-                .start()
-                .map(|()| {
-                    let mut cb = get_clipboard().unwrap();
-                    cb.set().wait().image(image).map_err(to_exc).unwrap();
-                })
-                .map_err(|_| raise_exc("Couldn't daemonize."));
+            return Ok(());
         }
     }
 
