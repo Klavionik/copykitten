@@ -47,45 +47,51 @@ fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
 }
 
 #[pyfunction]
-#[pyo3(signature = (content, *, wait=false))]
-fn copy(content: &str, wait: bool) -> PyResult<()> {
-    #[cfg(target_os = "linux")]
-    if wait {
-        let _ = with_daemon(|()| {
-            let mut cb = get_clipboard().unwrap();
-            cb.set().wait().text(content).unwrap();
-        });
-
-        return Ok(());
-    }
-
+fn copy(content: &str) -> PyResult<()> {
     let mut cb = get_clipboard()?;
 
     cb.set_text(content).map_err(to_exc)?;
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
 #[pyfunction]
-#[pyo3(signature = (content, width, height, *, wait=false))]
-fn copy_image(content: Cow<[u8]>, width: usize, height: usize, wait: bool) -> PyResult<()> {
+fn copy_wait(content: &str) -> PyResult<()> {
+    let _ = with_daemon(|()| {
+        let mut cb = get_clipboard().unwrap();
+        cb.set().wait().text(content).unwrap();
+    });
+
+    Ok(())
+}
+
+#[pyfunction]
+fn copy_image(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
     let image = arboard::ImageData {
         bytes: content,
         width,
         height,
     };
 
-    #[cfg(target_os = "linux")]
-    if wait {
-        let _ = with_daemon(|()| {
-            let mut cb = get_clipboard().unwrap();
-            cb.set().wait().image(image).map_err(to_exc).unwrap();
-        });
-
-        return Ok(());
-    }
-
     let mut cb = get_clipboard()?;
     cb.set_image(image).map_err(to_exc)?;
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+#[pyfunction]
+fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
+    let image = arboard::ImageData {
+        bytes: content,
+        width,
+        height,
+    };
+
+    let _ = with_daemon(|()| {
+        let mut cb = get_clipboard().unwrap();
+        cb.set().wait().image(image).map_err(to_exc).unwrap();
+    });
+
     Ok(())
 }
 
@@ -116,9 +122,11 @@ fn clear() -> PyResult<()> {
 fn _copykitten(py: Python, module: &PyModule) -> PyResult<()> {
     module.add("CopykittenError", py.get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste, module)?)?;
     module.add_function(wrap_pyfunction!(clear, module)?)?;
     module.add_function(wrap_pyfunction!(copy_image, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_image_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
     Ok(())
 }
