@@ -1,4 +1,3 @@
-import sys
 from typing import Tuple
 
 from ._copykitten import CopykittenError
@@ -31,7 +30,7 @@ def copy(content: str, *, wait: bool = False) -> None:
     :raises CopykittenError: Raised if copying failed.
     :raises TypeError: Raised if the content is not a string.
     """
-    if sys.platform == "linux" and wait:
+    if wait:
         _copy_wait(content)
     else:
         _copy(content)
@@ -70,7 +69,7 @@ def copy_image(content: bytes, width: int, height: int, *, wait: bool = False) -
     :raises CopykittenError: Raised if the image cannot be copied into the clipboard.
     :raises TypeError: Raised if `content` is not bytes or `width`/`height` is not an integer.
     """
-    if sys.platform == "linux" and wait:
+    if wait:
         _copy_image_wait(content, width, height)
     else:
         _copy_image(content, width, height)

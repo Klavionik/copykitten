@@ -65,6 +65,12 @@ fn copy_wait(content: &str) -> PyResult<()> {
     Ok(())
 }
 
+#[cfg(not(target_os = "linux"))]
+#[pyfunction]
+fn copy_wait(_content: &str) -> PyResult<()> {
+    Ok(())
+}
+
 #[pyfunction]
 fn copy_image(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
     let image = arboard::ImageData {
@@ -92,6 +98,12 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
         cb.set().wait().image(image).map_err(to_exc).unwrap();
     });
 
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+#[pyfunction]
+fn copy_image_wait(_content: Cow<[u8]>, _width: usize, _height: usize) -> PyResult<()> {
     Ok(())
 }
 
