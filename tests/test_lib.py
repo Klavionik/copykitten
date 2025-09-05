@@ -95,9 +95,11 @@ def test_copy_wait_no_wait(read_clipboard: ReadClipboard):
         ["python", "-c", "import copykitten; copykitten.copy('text', wait=False)"]
     )
 
-    actual = read_clipboard()
-
-    assert actual == ""
+    # The clipboard content becomes unavailable due to the responsible process exiting.
+    # In this case xclip returns an error.
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        read_clipboard()
+        assert exc.value.stderr == "Error: target STRING not available"
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
