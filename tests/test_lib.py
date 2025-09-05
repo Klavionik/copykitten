@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 from time import sleep
 
@@ -86,3 +87,23 @@ def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipbo
     assert test_image.tobytes() == pasted_image
     assert width == test_image.width
     assert height == test_image.height
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
+def test_copy_wait_no_wait(read_clipboard: ReadClipboard):
+    subprocess.check_call(
+        ["python", "-c", "import copykitten; copykitten.copy('text', wait=False)"]
+    )
+
+    actual = read_clipboard()
+
+    assert actual == ""
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
+def test_copy_wait_wait(read_clipboard: ReadClipboard):
+    subprocess.check_call(["python", "-c", "import copykitten; copykitten.copy('text', wait=True)"])
+
+    actual = read_clipboard()
+
+    assert actual == "text"
