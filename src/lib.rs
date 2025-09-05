@@ -67,8 +67,8 @@ fn copy_wait(content: &str) -> PyResult<()> {
 
 #[cfg(not(target_os = "linux"))]
 #[pyfunction]
-fn copy_wait(_content: &str) -> PyResult<()> {
-    Ok(())
+fn copy_wait(content: &str) -> PyResult<()> {
+    copy(content)
 }
 
 #[pyfunction]
@@ -103,8 +103,8 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
 
 #[cfg(not(target_os = "linux"))]
 #[pyfunction]
-fn copy_image_wait(_content: Cow<[u8]>, _width: usize, _height: usize) -> PyResult<()> {
-    Ok(())
+fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
+    copy_image(content, width, height)
 }
 
 #[pyfunction]
