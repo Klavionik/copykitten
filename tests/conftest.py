@@ -42,7 +42,7 @@ def write_clipboard_image(clipboard) -> WriteClipboardImage:
     return clipboard.write_image
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def clear_clipboard(clipboard) -> Iterator[None]:
     yield
 
