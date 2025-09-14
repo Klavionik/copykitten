@@ -90,17 +90,19 @@ def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipbo
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
-def test_copy_wait_no_wait(read_clipboard: ReadClipboard):
+def test_copy_wait_no_wait(capfd: pytest.CaptureFixture[str], read_clipboard: ReadClipboard):
     subprocess.check_call(
         ["python", "-c", "import copykitten; copykitten.copy('text', wait=False)"]
     )
 
     # The clipboard content becomes unavailable due to the responsible process exiting.
-    # In this case xclip returns an error.
-    with pytest.raises(subprocess.CalledProcessError) as exc:
+    # In this case xclip returns an error. Also, disable pytest's stderr capturing
+    # to properly check the exception.
+    with pytest.raises(subprocess.CalledProcessError) as exc, capfd.disabled():
         read_clipboard()
 
-    assert exc.value.stderr == "Error: target STRING not available"
+        assert exc.value.returncode == 1
+        assert exc.value.stderr == "Error: target STRING not available"
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
