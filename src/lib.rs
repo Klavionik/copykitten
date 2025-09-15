@@ -7,6 +7,7 @@ use daemonize::Daemonize;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
+use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
@@ -37,13 +38,11 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 }
 
 #[cfg(target_os = "linux")]
-fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
-    let daemon = Daemonize::new();
+fn with_daemon<F: FnOnce(())>(func: F) {
+    let stderr = File::create("/tmp/copykitten-daemon").unwrap();
+    let daemon = Daemonize::new().stderr(stderr);
 
-    daemon
-        .start()
-        .map(func)
-        .map_err(|_| raise_exc("Couldn't daemonize."))
+    daemon.start().map(func).unwrap()
 }
 
 #[pyfunction]
@@ -57,7 +56,7 @@ fn copy(content: &str) -> PyResult<()> {
 #[cfg(target_os = "linux")]
 #[pyfunction]
 fn copy_wait(content: &str) -> PyResult<()> {
-    let _ = with_daemon(|()| {
+    with_daemon(|()| {
         let mut cb = get_clipboard().unwrap();
         cb.set().wait().text(content).unwrap();
     });
@@ -93,7 +92,7 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
         height,
     };
 
-    let _ = with_daemon(|()| {
+    with_daemon(|()| {
         let mut cb = get_clipboard().unwrap();
         cb.set().wait().image(image).map_err(to_exc).unwrap();
     });
