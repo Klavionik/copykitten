@@ -3,7 +3,7 @@ extern crate core;
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
 #[cfg(target_os = "linux")]
-use daemonize::Daemonize;
+use daemonize::{Daemonize, Outcome};
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
@@ -23,7 +23,7 @@ fn raise_exc(text: &'static str) -> PyErr {
     CopykittenError::new_err(text)
 }
 
-fn to_exc(err: arboard::Error) -> PyErr {
+fn to_exc<E: ToString>(err: E) -> PyErr {
     CopykittenError::new_err(err.to_string())
 }
 
@@ -38,11 +38,19 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 }
 
 #[cfg(target_os = "linux")]
-fn with_daemon<F: FnOnce(())>(func: F) {
-    let stderr = File::create("/tmp/copykitten-daemon").unwrap();
+fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
+    let stderr = File::create("/tmp/copykitten-daemon")?;
     let daemon = Daemonize::new().stderr(stderr);
 
-    daemon.start().map(func).unwrap()
+    match daemon.execute() {
+        Outcome::Child(Ok(_)) => {
+            func(());
+            Ok(())
+        }
+        Outcome::Parent(Err(e)) => Err(to_exc(e.to_string())),
+        Outcome::Child(Err(e)) => Err(to_exc(e.to_string())),
+        Outcome::Parent(Ok(_)) => Ok(()),
+    }
 }
 
 #[pyfunction]
@@ -57,9 +65,9 @@ fn copy(content: &str) -> PyResult<()> {
 #[pyfunction]
 fn copy_wait(content: &str) -> PyResult<()> {
     with_daemon(|()| {
-        let mut cb = get_clipboard().unwrap();
+        let mut cb = arboard::Clipboard::new().unwrap();
         cb.set().wait().text(content).unwrap();
-    });
+    })?;
 
     Ok(())
 }
@@ -93,9 +101,9 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
     };
 
     with_daemon(|()| {
-        let mut cb = get_clipboard().unwrap();
-        cb.set().wait().image(image).map_err(to_exc).unwrap();
-    });
+        let mut cb = arboard::Clipboard::new().unwrap();
+        cb.set().wait().image(image).unwrap();
+    })?;
 
     Ok(())
 }
