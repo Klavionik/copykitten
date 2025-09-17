@@ -114,6 +114,37 @@ def test_copy_wait(read_clipboard: ReadClipboard):
     assert actual == "text"
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
+def test_copy_wait_twice(read_clipboard: ReadClipboard):
+    code = """\
+import copykitten
+
+copykitten.copy('text', wait=True)
+copykitten.copy('another text', wait=True)
+    """
+    subprocess.check_call(["python", "-c", code])
+
+    actual = read_clipboard()
+
+    assert actual == "another text"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Waiting is supported only on Linux")
+def test_copy_image_wait(test_image: Image.Image, read_clipboard_image: ReadClipboardImage):
+    code = f"""\
+import copykitten
+from PIL import Image
+
+image = {test_image.tobytes()}
+copykitten.copy_image(image, {test_image.width}, {test_image.height}, wait=True)
+    """
+    subprocess.check_call(["python", "-c", code])
+
+    pasted_image = read_clipboard_image()
+
+    assert pasted_image.tobytes() == test_image.tobytes()
+
+
 @pytest.mark.skipif(
     sys.platform == "linux", reason="Check that waiting doesn't break things on Win/Mac"
 )
