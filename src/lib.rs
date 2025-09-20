@@ -80,13 +80,13 @@ fn copy_wait(content: &str) -> PyResult<()> {
 
 #[pyfunction]
 fn copy_image(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<()> {
+    let mut cb = get_clipboard()?;
     let image = arboard::ImageData {
         bytes: content,
         width,
         height,
     };
 
-    let mut cb = get_clipboard()?;
     cb.set_image(image).map_err(to_exc)?;
     Ok(())
 }
