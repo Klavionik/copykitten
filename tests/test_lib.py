@@ -95,9 +95,6 @@ def test_copy_image(test_image: Image.Image, read_clipboard_image: ReadClipboard
     assert test_image_bytes == pasted_image.tobytes()
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32", reason="No way to reliably assert result on Windows yet"
-)
 def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipboardImage):
     write_clipboard_image(test_image)
     sleep(SLEEP_TIME)
