@@ -20,17 +20,17 @@ More on arboard errors: https://docs.rs/arboard/latest/arboard/enum.Error.html
 """
 
 
-def copy(content: str, *, wait: bool = False) -> None:
+def copy(content: str, *, detach: bool = False) -> None:
     """
     Copies passed text content into the clipboard.
     Content must be a valid UTF-8 string.
 
     :param content: Text to copy.
-    :param wait: Keep content available after the process exit (until overwritten).
+    :param detach: Spawn a background process to keep the content available after exit.
     :raises CopykittenError: Raised if copying failed.
     :raises TypeError: Raised if the content is not a string.
     """
-    if wait:
+    if detach:
         _copy_wait(content)
     else:
         _copy(content)
@@ -58,18 +58,18 @@ def clear() -> None:
     _clear()
 
 
-def copy_image(content: bytes, width: int, height: int, *, wait: bool = False) -> None:
+def copy_image(content: bytes, width: int, height: int, *, detach: bool = False) -> None:
     """
     Copies given image data to the clipboard.
 
     :param content: Raw RGBA image data.
     :param width: Image width.
     :param height: Image height.
-    :param wait: Keep content available after the process exit (until overwritten).
+    :param detach: Spawn a background process to keep the image available after exit.
     :raises CopykittenError: Raised if the image cannot be copied into the clipboard.
     :raises TypeError: Raised if `content` is not bytes or `width`/`height` is not an integer.
     """
-    if wait:
+    if detach:
         _copy_image_wait(content, width, height)
     else:
         _copy_image(content, width, height)

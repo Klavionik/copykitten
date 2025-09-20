@@ -39,7 +39,7 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 
 #[cfg(target_os = "linux")]
 fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
-    let stderr = File::create("/tmp/copykitten-daemon")?;
+    let stderr = File::create("/tmp/copykitten-daemon").map_err(|e| to_exc(e.to_string()))?;
     let daemon = Daemonize::new().stderr(stderr);
 
     match daemon.execute() {
