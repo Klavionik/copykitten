@@ -38,13 +38,13 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 }
 
 #[cfg(target_os = "linux")]
-fn with_daemon<F: FnOnce(())>(func: F) -> PyResult<()> {
+fn with_daemon<F: FnOnce()>(func: F) -> PyResult<()> {
     let stderr = File::create("/tmp/copykitten-daemon").map_err(|e| to_exc(e.to_string()))?;
     let daemon = Daemonize::new().stderr(stderr);
 
     match daemon.execute() {
         Outcome::Child(Ok(_)) => {
-            func(());
+            func();
             Ok(())
         }
         Outcome::Parent(Err(e)) => Err(to_exc(e.to_string())),
@@ -64,7 +64,7 @@ fn copy(content: &str) -> PyResult<()> {
 #[cfg(target_os = "linux")]
 #[pyfunction]
 fn copy_wait(content: &str) -> PyResult<()> {
-    with_daemon(|()| {
+    with_daemon(|| {
         let mut cb = arboard::Clipboard::new().unwrap();
         cb.set().wait().text(content).unwrap();
     })?;
@@ -100,7 +100,7 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
         height,
     };
 
-    with_daemon(|()| {
+    with_daemon(|| {
         let mut cb = arboard::Clipboard::new().unwrap();
         cb.set().wait().image(image).unwrap();
     })?;
