@@ -117,7 +117,7 @@ jobs:
 
   macos:
     name: Build & test on MacOS
-    runs-on: macos-12
+    runs-on: macos-13
     strategy:
       matrix:
         # If this workflow is called to build for release, build for x64 and ARM64

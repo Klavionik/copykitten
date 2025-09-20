@@ -79,6 +79,31 @@ import copykitten
 copykitten.clear()
 ```
 
+## Detach mode _(unreleased)_
+Both `copy` and `copy_image` functions support an optional keyword-only bool parameter `detach` (defaults to `False`).
+This feature is only relevant on Linux; using it on Windows or macOS is a no-op.
+
+```python
+import copykitten
+from PIL import Image
+
+# Copy text with detach.
+copykitten.copy("meow", detach=True)
+
+# Copy image with detach.
+image = Image.open("image.png")
+image_bytes = image.tobytes()
+copykitten.copy_image(image_bytes, image.width, image.height, detach=True)
+```
+
+Copying with detach will spawn a background process (a daemon) that will manage the copied content instead of the
+parent process. This is useful for one-off scripts that copy something to the clipboard and exit shortly after that. In
+this case, the copied content may become unavailable; there will be nothing to paste. A lot of times, this is not a
+problem due to Linux distros including a pre-installed clipboard manager that will handle such cases. Still, some distros
+don't have a clipboard manager.
+
+The background process will run until the clipboard content is overwritten by another copy operation.
+
 # Rationale
 At the time of writing, there are very few Python packages that handle the clipboard. Most of them are simply no longer
 maintained (including the most popular solution around the web, [pyperclip](https://github.com/asweigart/pyperclip)).

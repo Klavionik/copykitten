@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 from time import sleep
 
@@ -86,3 +87,72 @@ def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipbo
     assert test_image.tobytes() == pasted_image
     assert width == test_image.width
     assert height == test_image.height
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
+def test_copy_no_detach(capfd: pytest.CaptureFixture[str], read_clipboard: ReadClipboard):
+    subprocess.check_call(
+        ["python", "-c", "import copykitten; copykitten.copy('text', detach=False)"]
+    )
+
+    # The clipboard content becomes unavailable due to the responsible process exiting.
+    # In this case xclip returns an error. Also, disable pytest's stderr capturing
+    # to properly check the exception.
+    with pytest.raises(subprocess.CalledProcessError) as exc, capfd.disabled():
+        read_clipboard()
+
+        assert exc.value.returncode == 1
+        assert exc.value.stderr == "Error: target STRING not available"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
+def test_copy_detach(read_clipboard: ReadClipboard):
+    subprocess.check_call(
+        ["python", "-c", "import copykitten; copykitten.copy('text', detach=True)"]
+    )
+
+    actual = read_clipboard()
+
+    assert actual == "text"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
+def test_copy_detach_twice(read_clipboard: ReadClipboard):
+    code = """\
+import copykitten
+
+copykitten.copy('text', detach=True)
+copykitten.copy('another text', detach=True)
+    """
+    subprocess.check_call(["python", "-c", code])
+
+    actual = read_clipboard()
+
+    assert actual == "another text"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
+def test_copy_image_detach(test_image: Image.Image, read_clipboard_image: ReadClipboardImage):
+    code = f"""\
+import copykitten
+from PIL import Image
+
+image = {test_image.tobytes()}
+copykitten.copy_image(image, {test_image.width}, {test_image.height}, detach=True)
+    """
+    subprocess.check_call(["python", "-c", code])
+
+    pasted_image = read_clipboard_image()
+
+    assert pasted_image.tobytes() == test_image.tobytes()
+
+
+@pytest.mark.skipif(
+    sys.platform == "linux", reason="Check that detach doesn't break things on Win/Mac"
+)
+def test_copy_detach_not_linux(read_clipboard: ReadClipboard):
+    copykitten.copy("text", detach=True)
+
+    actual = read_clipboard()
+
+    assert actual == "text"

@@ -1,3 +1,5 @@
+from typing import Iterator
+
 import pytest
 from PIL import Image
 
@@ -38,3 +40,10 @@ def read_clipboard_image(clipboard) -> ReadClipboardImage:
 @pytest.fixture(scope="session")
 def write_clipboard_image(clipboard) -> WriteClipboardImage:
     return clipboard.write_image
+
+
+@pytest.fixture(autouse=True)
+def clear_clipboard(clipboard) -> Iterator[None]:
+    yield
+
+    clipboard.write("")

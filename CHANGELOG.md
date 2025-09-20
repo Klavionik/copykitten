@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `copy` and `copy_image` functions now support an optional keyword-only parameter `detach` (see README for details).
+### Changed
+- The public API now have proper docstrings visible via the built-in `help` function.
 
 ## [1.2.3] - 2024-10-20
 - Add Python 3.13 PyPI classifier.
