@@ -104,6 +104,15 @@ don't have a clipboard manager.
 
 The background process will run until the clipboard content is overwritten by another copy operation.
 
+### Knows issues
+For now, there are some limitations that arise from the way the daemon is spawned (namely, as a fork of the parent
+process).
+
+1. Interleaving copying w/o detach and with detach (during the execution of a single program) won't work well
+and may lead to a paste attempt freezing the application until the clipboard is overwritten. Choose one way and stick to
+it.
+2. If your program utilizes large amounts of memory, this memory won't be freed until the background process exit.
+
 # Rationale
 At the time of writing, there are very few Python packages that handle the clipboard. Most of them are simply no longer
 maintained (including the most popular solution around the web, [pyperclip](https://github.com/asweigart/pyperclip)).
