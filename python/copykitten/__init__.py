@@ -38,11 +38,11 @@ def copy(content: str, *, detach: bool = False) -> None:
 
 def paste() -> str:
     """
-    Returns the current text content of the clipboard
-    as a UTF-8 string.
+    Returns the current text content of the clipboard as a UTF-8 string.
 
     :return: Clipboard content.
-    :raises CopykittenError: Raised if fetching clipboard content failed or the clipboard is empty.
+    :raises CopykittenError: Raised if fetching the clipboard content failed
+    or the clipboard is empty.
     """
     return _paste()
 
