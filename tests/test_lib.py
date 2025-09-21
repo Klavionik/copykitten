@@ -44,6 +44,7 @@ def test_copy_text(read_clipboard: ReadClipboard):
 
 
 @pytest.mark.repeat(ITERATIONS)
+@pytest.mark.skipif(sys.platform == "linux", reason="Linux needs a dedicated test case")
 def test_clear(read_clipboard: ReadClipboard, write_clipboard: WriteClipboard):
     write_clipboard("text")
     sleep(SLEEP_TIME)
@@ -53,6 +54,25 @@ def test_clear(read_clipboard: ReadClipboard, write_clipboard: WriteClipboard):
     actual = read_clipboard()
 
     assert actual == ""
+
+
+@pytest.mark.repeat(ITERATIONS)
+@pytest.mark.skipif(sys.platform != "linux", reason="Different behavior on Linux")
+def test_clear_linux(
+    capfd: pytest.CaptureFixture[str],
+    read_clipboard: ReadClipboard,
+    write_clipboard: WriteClipboard,
+):
+    write_clipboard("text")
+    sleep(SLEEP_TIME)
+    copykitten.clear()
+    sleep(SLEEP_TIME)
+
+    with pytest.raises(subprocess.CalledProcessError) as exc, capfd.disabled():
+        read_clipboard()
+
+        assert exc.value.returncode == 1
+        assert exc.value.stderr == "Error: target STRING not available"
 
 
 @pytest.mark.repeat(ITERATIONS)
@@ -75,9 +95,6 @@ def test_copy_image(test_image: Image.Image, read_clipboard_image: ReadClipboard
     assert test_image_bytes == pasted_image.tobytes()
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32", reason="No way to reliably assert result on Windows yet"
-)
 def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipboardImage):
     write_clipboard_image(test_image)
     sleep(SLEEP_TIME)

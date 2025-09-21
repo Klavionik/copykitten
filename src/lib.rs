@@ -138,8 +138,8 @@ fn clear() -> PyResult<()> {
 }
 
 #[pymodule]
-fn _copykitten(py: Python, module: &PyModule) -> PyResult<()> {
-    module.add("CopykittenError", py.get_type::<CopykittenError>())?;
+fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add("CopykittenError", module.py().get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(copy_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste, module)?)?;
