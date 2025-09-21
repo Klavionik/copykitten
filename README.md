@@ -79,7 +79,7 @@ import copykitten
 copykitten.clear()
 ```
 
-## Detach mode _(unreleased)_
+## Detach mode
 Both `copy` and `copy_image` functions support an optional keyword-only bool parameter `detach` (defaults to `False`).
 This feature is only relevant on Linux; using it on Windows or macOS is a no-op.
 
@@ -121,4 +121,4 @@ anything.
 # What's in a name?
 You can’t even imagine, how many Python packages devoted to the clipboard management there are on PyPI! Most of them
 are abandoned for a decade, and all the neat obvious names (and even some rather creative ones) are already taken.
-So I had no choice, but to invent this tongue-in-cheek name. Also, my wife approved it.
+So I had no choice, but to take this tongue-in-cheek name. Also, my wife approved it.

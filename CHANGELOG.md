@@ -5,13 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.0] - 2025-09-21
 ### Added
-- `copy` and `copy_image` functions now support an optional keyword-only parameter `detach` (see README for details).
+- `copy` and `copy_image` functions now support the detach mode on Linux. In detach mode, copying will spawn
+a daemon that will manage the copied content instead of the parent process, useful for short scripts. See README for
+details.
 ### Changed
 - The public API now have proper docstrings visible via the built-in `help` function.
-
-## [1.2.3] - 2024-10-20
-- Add Python 3.13 PyPI classifier.
+- `arboard` was bumped to 3.6.1, resulting in a **breaking change** to `paste`. Previously, if you cleared the
+clipboard after copying text data into it, `paste` would have returned an empty string. Now it will raise an exception.
+There are also multiple improvements and bug fixes to how image data is handled.
 
 ## [1.2.2] - 2024-10-07
 ### Changed
