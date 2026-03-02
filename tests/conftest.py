@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Iterator
 
 import pytest
@@ -8,9 +9,18 @@ from tests.clipboard import (
     ReadClipboard,
     ReadClipboardImage,
     WriteClipboard,
-    WriteClipboardImage,
+    WriteClipboardImage, WriteClipboardFileList,ReadClipboardFileList
 )
 
+@pytest.fixture(scope="session")
+def tmp_path(tmp_path_factory):
+    pth = tmp_path_factory.mktemp("test_files")
+    yield pth
+    # Cleanup
+    for item in pth.iterdir():
+        if item.is_file():
+            item.unlink()
+    pth.rmdir()
 
 @pytest.fixture(scope="session")
 def test_image() -> Image.Image:
@@ -40,6 +50,16 @@ def read_clipboard_image(clipboard) -> ReadClipboardImage:
 @pytest.fixture(scope="session")
 def write_clipboard_image(clipboard) -> WriteClipboardImage:
     return clipboard.write_image
+
+
+@pytest.fixture(scope="session")
+def paste_file_list(clipboard) -> WriteClipboardFileList:
+    return clipboard.write_file_list
+
+
+@pytest.fixture(scope="session")
+def read_clipboard_file_list(clipboard) -> ReadClipboardFileList:
+    return clipboard.read_file_list
 
 
 @pytest.fixture(autouse=True)

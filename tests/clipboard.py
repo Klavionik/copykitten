@@ -11,6 +11,8 @@ ReadClipboard = Callable[[], str]
 WriteClipboard = Callable[[str], None]
 ReadClipboardImage = Callable[[], Image.Image]
 WriteClipboardImage = Callable[[Image.Image], None]
+WriteClipboardFileList = Callable[[list[str]], None]
+ReadClipboardFileList = Callable[[], list[str]]
 
 T = TypeVar("T")
 
@@ -37,6 +39,8 @@ class Clipboard:
     write = Resolver[WriteClipboard]()
     read_image = Resolver[ReadClipboardImage]()
     write_image = Resolver[WriteClipboardImage]()
+    write_file_list = Resolver[WriteClipboardFileList]()
+    read_file_list = Resolver[ReadClipboardFileList]()
 
 
 def read_macos() -> str:
@@ -72,6 +76,37 @@ def write_image_macos(img: Image.Image) -> None:
         )
 
         subprocess.run(cmd, check=True)
+
+
+def read_file_list_macos() -> list[str]:
+    try:
+        from AppKit import NSPasteboard, NSFilenamesPboardType
+        pb = NSPasteboard.generalPasteboard()
+        types = pb.types()
+        if NSFilenamesPboardType in types:
+            file_paths = pb.propertyListForType_(NSFilenamesPboardType)
+            return file_paths
+        return []
+    except ImportError:
+        # Fallback to using AppleScript if AppKit is not available.
+        data = subprocess.check_output(("osascript", "-e", "get the clipboard as text"))
+        return [line.strip() for line in data.decode().splitlines() if line]
+    except Exception as e:
+        return []
+
+
+def write_file_list_macos(file_list: list[str]) -> None:
+    try:
+        from AppKit import NSPasteboard, NSFilenamesPboardType
+        pb = NSPasteboard.generalPasteboard()
+        pb.declareTypes_owner_([NSFilenamesPboardType], None)
+        pb.setPropertyList_forType_(file_list, NSFilenamesPboardType)
+    except ImportError:
+        # Fallback to using AppleScript if AppKit is not available.
+        content = "\n".join(file_list)
+        subprocess.run(("osascript", "-e", "set the clipboard to text \"%s\"" % content), check=True)
+    except Exception as e:
+        pass
 
 
 def read_win() -> str:

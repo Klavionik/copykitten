@@ -115,6 +115,35 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
 }
 
 #[pyfunction]
+fn copy_file_list(file_list: Vec<String>) -> PyResult<()> {
+    let mut cb = get_clipboard()?;
+    let paths: Vec<std::path::PathBuf> = file_list.into_iter().map(std::path::PathBuf::from).collect();
+    let file_list: Vec<&std::path::Path> = paths.iter().map(|p| p.as_path()).collect();
+
+    cb.set().file_list(&file_list).map_err(to_exc)
+}
+
+#[cfg(not(target_os = "linux"))]
+#[pyfunction]
+fn copy_file_list_wait(file_list: Vec<String>) -> PyResult<()> {
+    copy_file_list(file_list)
+}
+
+#[cfg(target_os = "linux")]
+#[pyfunction]
+fn copy_file_list_wait(file_list: Vec<String>) -> PyResult<()> {
+    let paths: Vec<std::path::PathBuf> = file_list.into_iter().map(std::path::PathBuf::from).collect();
+    let file_list: Vec<&std::path::Path> = paths.iter().map(|p| p.as_path()).collect();
+
+    with_daemon(|| {
+        let mut cb = arboard::Clipboard::new().unwrap();
+        cb.set().wait().file_list(&file_list).unwrap();
+    })?;
+
+    Ok(())
+}
+
+#[pyfunction]
 fn paste() -> PyResult<String> {
     let mut cb = get_clipboard()?;
     let content = cb.get_text().map_err(to_exc)?;
@@ -128,6 +157,15 @@ fn paste_image() -> PyResult<(Cow<'static, [u8]>, usize, usize)> {
     let image = cb.get_image().map_err(to_exc)?;
 
     Ok((image.bytes, image.width, image.height))
+}
+
+#[pyfunction]
+fn paste_file_list() -> PyResult<Vec<String>> {
+    let mut cb = get_clipboard()?;
+    let file_list = cb.get().file_list().map_err(to_exc)?;
+    let file_list = file_list.into_iter().map(|s| s.as_os_str().to_string_lossy().into_owned()).collect();
+
+    Ok(file_list)
 }
 
 #[pyfunction]
@@ -146,6 +184,9 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(clear, module)?)?;
     module.add_function(wrap_pyfunction!(copy_image, module)?)?;
     module.add_function(wrap_pyfunction!(copy_image_wait, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_file_list, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_file_list_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
+    module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
     Ok(())
 }

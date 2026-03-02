@@ -12,6 +12,8 @@ from tests.clipboard import (
     ReadClipboardImage,
     WriteClipboard,
     WriteClipboardImage,
+    WriteClipboardFileList,
+    ReadClipboardFileList,
 )
 
 DEFAULT_ITERATIONS = 50
@@ -95,6 +97,20 @@ def test_copy_image(test_image: Image.Image, read_clipboard_image: ReadClipboard
     assert test_image_bytes == pasted_image.tobytes()
 
 
+def test_copy_file_list(tmp_path, read_clipboard_file_list: ReadClipboardFileList, paste_file_list: WriteClipboardFileList):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    file_list = [str(file1), str(file2)]
+    copykitten.copy_file_list(file_list)
+    sleep(SLEEP_TIME)
+
+    actual = read_clipboard_file_list()
+
+    assert actual == file_list
+
+
 def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipboardImage):
     write_clipboard_image(test_image)
     sleep(SLEEP_TIME)
@@ -104,6 +120,20 @@ def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipbo
     assert test_image.tobytes() == pasted_image
     assert width == test_image.width
     assert height == test_image.height
+
+
+def test_paste_file_list(tmp_path, read_clipboard_file_list: ReadClipboardFileList, paste_file_list: WriteClipboardFileList):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    file_list = [str(file1), str(file2)]
+    paste_file_list(file_list)
+    sleep(SLEEP_TIME)
+
+    actual = copykitten.paste_file_list()
+
+    assert actual == file_list
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
