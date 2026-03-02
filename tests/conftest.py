@@ -12,15 +12,6 @@ from tests.clipboard import (
     WriteClipboardImage, WriteClipboardFileList,ReadClipboardFileList
 )
 
-@pytest.fixture(scope="session")
-def tmp_path(tmp_path_factory):
-    pth = tmp_path_factory.mktemp("test_files")
-    yield pth
-    # Cleanup
-    for item in pth.iterdir():
-        if item.is_file():
-            item.unlink()
-    pth.rmdir()
 
 @pytest.fixture(scope="session")
 def test_image() -> Image.Image:

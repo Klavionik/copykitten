@@ -194,6 +194,25 @@ copykitten.copy_image(image, {test_image.width}, {test_image.height}, detach=Tru
     assert pasted_image.tobytes() == test_image.tobytes()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
+def test_copy_file_list_detach(tmp_path, read_clipboard_file_list: ReadClipboardFileList, paste_file_list: WriteClipboardFileList):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    file_list = [str(file1), str(file2)]
+    code = f"""\
+import copykitten
+file_list = {file_list}
+copykitten.copy_file_list(file_list, detach=True)
+    """
+    subprocess.check_call(["python", "-c", code])
+
+    actual = read_clipboard_file_list()
+
+    assert actual == file_list
+
+
 @pytest.mark.skipif(
     sys.platform == "linux", reason="Check that detach doesn't break things on Win/Mac"
 )

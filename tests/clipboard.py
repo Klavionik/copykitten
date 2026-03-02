@@ -166,6 +166,58 @@ def write_image_win(img: Image.Image) -> None:
         tmp_file.unlink()
 
 
+def read_file_list_win() -> list[str]:
+    result = subprocess.check_output(
+        (
+            "powershell.exe",
+            "-NoProfile",
+            "-Command",
+            "Add-Type -Assembly System.Windows.Forms; "
+            "[System.Windows.Forms.Clipboard]::GetFileDropList() | ForEach-Object { $_ }",
+        )
+    )
+    return [line.strip() for line in result.decode().splitlines() if line.strip()]
+
+
+def write_file_list_win(file_list: list[str]) -> None:
+    # Build a PowerShell StringCollection from the provided paths and set it as clipboard.
+    paths_ps = ", ".join("'%s'" % p.replace("'", "''") for p in file_list)
+    script = (
+        "Add-Type -Assembly System.Windows.Forms; "
+        "$col = New-Object System.Collections.Specialized.StringCollection; "
+        "$col.AddRange(@(%s)); " % paths_ps +
+        "[System.Windows.Forms.Clipboard]::SetFileDropList($col)"
+    )
+    subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)
+
+
+def read_file_list_linux() -> list[str]:
+    result = subprocess.check_output(
+        ("xclip", "-sel", "clipboard", "-o", "-target", "text/uri-list")
+    )
+    paths = []
+    for line in result.decode().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("file://"):
+            from urllib.parse import unquote
+            paths.append(unquote(line[7:]))
+        else:
+            paths.append(line)
+    return paths
+
+
+def write_file_list_linux(file_list: list[str]) -> None:
+    from urllib.parse import quote
+    uri_list = "\n".join("file://" + quote(p, safe="/") for p in file_list)
+    subprocess.run(
+        ("xclip", "-sel", "clipboard", "-i", "-target", "text/uri-list"),
+        input=uri_list.encode(),
+        check=True,
+    )
+
+
 def read_linux() -> str:
     return subprocess.check_output(("xclip", "-sel", "clipboard", "-o")).decode()
 
