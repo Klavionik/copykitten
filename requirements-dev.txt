@@ -2,3 +2,4 @@ pillow==11.0.0 ; python_version >= "3.13"
 pillow==10.4.0 ; python_version >= "3.8" and python_version < "3.13"
 pytest==8.0.0
 pytest-repeat==0.9.3
+pyobjc<=12.1; sys_platform == 'darwin' and python_version >= "3.10"
