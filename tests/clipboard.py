@@ -52,7 +52,9 @@ def write_macos(content: str) -> None:
 
 
 def read_image_macos() -> Image.Image:
-    data = subprocess.check_output(("osascript", "-e", "get the clipboard as «class PNGf»"))
+    data = subprocess.check_output(
+        ("osascript", "-e", "get the clipboard as «class PNGf»")
+    )
     # On macOS data looks like this: '«data PNGf<hex-string>»\n'.
     # So it has to be stripped and converted from hex.
     hex_string = data[11:-3].decode()
@@ -81,6 +83,7 @@ def write_image_macos(img: Image.Image) -> None:
 def read_file_list_macos() -> list[str]:
     try:
         from AppKit import NSPasteboard, NSFilenamesPboardType
+
         pb = NSPasteboard.generalPasteboard()
         types = pb.types()
         if NSFilenamesPboardType in types:
@@ -91,21 +94,24 @@ def read_file_list_macos() -> list[str]:
         # Fallback to using AppleScript if AppKit is not available.
         data = subprocess.check_output(("osascript", "-e", "get the clipboard as text"))
         return [line.strip() for line in data.decode().splitlines() if line]
-    except Exception as e:
+    except Exception:
         return []
 
 
 def write_file_list_macos(file_list: list[str]) -> None:
     try:
         from AppKit import NSPasteboard, NSFilenamesPboardType
+
         pb = NSPasteboard.generalPasteboard()
         pb.declareTypes_owner_([NSFilenamesPboardType], None)
         pb.setPropertyList_forType_(file_list, NSFilenamesPboardType)
     except ImportError:
         # Fallback to using AppleScript if AppKit is not available.
         content = "\n".join(file_list)
-        subprocess.run(("osascript", "-e", "set the clipboard to text \"%s\"" % content), check=True)
-    except Exception as e:
+        subprocess.run(
+            ("osascript", "-e", 'set the clipboard to text "%s"' % content), check=True
+        )
+    except Exception:
         pass
 
 
@@ -185,8 +191,9 @@ def write_file_list_win(file_list: list[str]) -> None:
     script = (
         "Add-Type -Assembly System.Windows.Forms; "
         "$col = New-Object System.Collections.Specialized.StringCollection; "
-        "$col.AddRange(@(%s)); " % paths_ps +
-        "[System.Windows.Forms.Clipboard]::SetFileDropList($col)"
+        "$col.AddRange(@(%s)); "
+        % paths_ps
+        + "[System.Windows.Forms.Clipboard]::SetFileDropList($col)"
     )
     subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)
 
@@ -202,6 +209,7 @@ def read_file_list_linux() -> list[str]:
             continue
         if line.startswith("file://"):
             from urllib.parse import unquote
+
             paths.append(unquote(line[7:]))
         else:
             paths.append(line)
@@ -210,6 +218,7 @@ def read_file_list_linux() -> list[str]:
 
 def write_file_list_linux(file_list: list[str]) -> None:
     from urllib.parse import quote
+
     uri_list = "\n".join("file://" + quote(p, safe="/") for p in file_list)
     subprocess.run(
         ("xclip", "-sel", "clipboard", "-i", "-target", "text/uri-list"),
@@ -227,7 +236,9 @@ def write_linux(content: str) -> None:
 
 
 def read_image_linux() -> Image.Image:
-    data = subprocess.check_output(("xclip", "-sel", "clipboard", "-o", "-target", "image/png"))
+    data = subprocess.check_output(
+        ("xclip", "-sel", "clipboard", "-o", "-target", "image/png")
+    )
     buffer = io.BytesIO(data)
     return Image.open(buffer, formats=["png"])
 

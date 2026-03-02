@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Iterator
 
 import pytest
@@ -9,7 +8,9 @@ from tests.clipboard import (
     ReadClipboard,
     ReadClipboardImage,
     WriteClipboard,
-    WriteClipboardImage, WriteClipboardFileList,ReadClipboardFileList
+    WriteClipboardImage,
+    WriteClipboardFileList,
+    ReadClipboardFileList,
 )
 
 
