@@ -3,7 +3,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Callable, Generic, TypeVar, cast
+from typing import Callable, Generic, TypeVar, cast, List
 
 from PIL import Image
 
@@ -11,8 +11,8 @@ ReadClipboard = Callable[[], str]
 WriteClipboard = Callable[[str], None]
 ReadClipboardImage = Callable[[], Image.Image]
 WriteClipboardImage = Callable[[Image.Image], None]
-WriteClipboardFileList = Callable[[list[str]], None]
-ReadClipboardFileList = Callable[[], list[str]]
+WriteClipboardFileList = Callable[[List[str]], None]
+ReadClipboardFileList = Callable[[], List[str]]
 
 T = TypeVar("T")
 
@@ -80,7 +80,7 @@ def write_image_macos(img: Image.Image) -> None:
         subprocess.run(cmd, check=True)
 
 
-def read_file_list_macos() -> list[str]:
+def read_file_list_macos() -> List[str]:
     try:
         from AppKit import NSPasteboard, NSFilenamesPboardType
 
@@ -98,7 +98,7 @@ def read_file_list_macos() -> list[str]:
         return []
 
 
-def write_file_list_macos(file_list: list[str]) -> None:
+def write_file_list_macos(file_list: List[str]) -> None:
     try:
         from AppKit import NSPasteboard, NSFilenamesPboardType
 
@@ -172,7 +172,7 @@ def write_image_win(img: Image.Image) -> None:
         tmp_file.unlink()
 
 
-def read_file_list_win() -> list[str]:
+def read_file_list_win() -> List[str]:
     result = subprocess.check_output(
         (
             "powershell.exe",
@@ -185,7 +185,7 @@ def read_file_list_win() -> list[str]:
     return [line.strip() for line in result.decode().splitlines() if line.strip()]
 
 
-def write_file_list_win(file_list: list[str]) -> None:
+def write_file_list_win(file_list: List[str]) -> None:
     # Build a PowerShell StringCollection from the provided paths and set it as clipboard.
     paths_ps = ", ".join("'%s'" % p.replace("'", "''") for p in file_list)
     script = (
@@ -198,7 +198,7 @@ def write_file_list_win(file_list: list[str]) -> None:
     subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)
 
 
-def read_file_list_linux() -> list[str]:
+def read_file_list_linux() -> List[str]:
     result = subprocess.check_output(
         ("xclip", "-sel", "clipboard", "-o", "-target", "text/uri-list")
     )
@@ -216,7 +216,7 @@ def read_file_list_linux() -> list[str]:
     return paths
 
 
-def write_file_list_linux(file_list: list[str]) -> None:
+def write_file_list_linux(file_list: List[str]) -> None:
     from urllib.parse import quote
 
     uri_list = "\n".join("file://" + quote(p, safe="/") for p in file_list)

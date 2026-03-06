@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 from ._copykitten import CopykittenError
 from ._copykitten import clear as _clear
@@ -88,7 +88,7 @@ def paste_image() -> Tuple[bytes, int, int]:
     return _paste_image()
 
 
-def paste_file_list() -> list[str]:
+def paste_file_list() -> List[str]:
     """
     Returns a list of file paths from the clipboard.
 
@@ -98,7 +98,7 @@ def paste_file_list() -> list[str]:
     return _paste_file_list()
 
 
-def copy_file_list(file_list: list[str], *, detach: bool = False) -> None:
+def copy_file_list(file_list: List[str], *, detach: bool = False) -> None:
     """
     Copies a list of file paths into the clipboard.
 
