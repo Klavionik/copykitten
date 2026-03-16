@@ -80,39 +80,34 @@ def write_image_macos(img: Image.Image) -> None:
         subprocess.run(cmd, check=True)
 
 
-def read_file_list_macos() -> List[str]:
+def _require_appkit():
     try:
         from AppKit import NSPasteboard, NSFilenamesPboardType
 
-        pb = NSPasteboard.generalPasteboard()
-        types = pb.types()
-        if NSFilenamesPboardType in types:
-            file_paths = pb.propertyListForType_(NSFilenamesPboardType)
-            return file_paths
-        return []
-    except ImportError:
-        # Fallback to using AppleScript if AppKit is not available.
-        data = subprocess.check_output(("osascript", "-e", "get the clipboard as text"))
-        return [line.strip() for line in data.decode().splitlines() if line]
-    except Exception:
-        return []
+        return NSPasteboard, NSFilenamesPboardType
+    except (ImportError, ModuleNotFoundError):
+        import pytest
+
+        pytest.skip("AppKit not available (requires pyobjc)")
+
+
+def read_file_list_macos() -> List[str]:
+    NSPasteboard, NSFilenamesPboardType = _require_appkit()
+
+    pb = NSPasteboard.generalPasteboard()
+    types = pb.types()
+    if NSFilenamesPboardType in types:
+        file_paths = pb.propertyListForType_(NSFilenamesPboardType)
+        return list(file_paths)
+    return []
 
 
 def write_file_list_macos(file_list: List[str]) -> None:
-    try:
-        from AppKit import NSPasteboard, NSFilenamesPboardType
+    NSPasteboard, NSFilenamesPboardType = _require_appkit()
 
-        pb = NSPasteboard.generalPasteboard()
-        pb.declareTypes_owner_([NSFilenamesPboardType], None)
-        pb.setPropertyList_forType_(file_list, NSFilenamesPboardType)
-    except ImportError:
-        # Fallback to using AppleScript if AppKit is not available.
-        content = "\n".join(file_list)
-        subprocess.run(
-            ("osascript", "-e", 'set the clipboard to text "%s"' % content), check=True
-        )
-    except Exception:
-        pass
+    pb = NSPasteboard.generalPasteboard()
+    pb.declareTypes_owner_([NSFilenamesPboardType], None)
+    pb.setPropertyList_forType_(file_list, NSFilenamesPboardType)
 
 
 def read_win() -> str:

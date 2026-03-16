@@ -4,10 +4,11 @@ extern crate core;
 use arboard::SetExtLinux;
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
+#[cfg(target_os = "linux")]
+use std::fs::File;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
-use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
@@ -115,25 +116,23 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
 }
 
 #[pyfunction]
-fn copy_file_list(file_list: Vec<String>) -> PyResult<()> {
+fn copy_file_list(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
     let mut cb = get_clipboard()?;
-    let paths: Vec<std::path::PathBuf> = file_list.into_iter().map(std::path::PathBuf::from).collect();
-    let file_list: Vec<&std::path::Path> = paths.iter().map(|p| p.as_path()).collect();
+    let file_list: Vec<&std::path::Path> = file_list.iter().map(|p| p.as_path()).collect();
 
     cb.set().file_list(&file_list).map_err(to_exc)
 }
 
 #[cfg(not(target_os = "linux"))]
 #[pyfunction]
-fn copy_file_list_wait(file_list: Vec<String>) -> PyResult<()> {
+fn copy_file_list_wait(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
     copy_file_list(file_list)
 }
 
 #[cfg(target_os = "linux")]
 #[pyfunction]
-fn copy_file_list_wait(file_list: Vec<String>) -> PyResult<()> {
-    let paths: Vec<std::path::PathBuf> = file_list.into_iter().map(std::path::PathBuf::from).collect();
-    let file_list: Vec<&std::path::Path> = paths.iter().map(|p| p.as_path()).collect();
+fn copy_file_list_wait(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
+    let file_list: Vec<&std::path::Path> = file_list.iter().map(|p| p.as_path()).collect();
 
     with_daemon(|| {
         let mut cb = arboard::Clipboard::new().unwrap();
@@ -160,10 +159,9 @@ fn paste_image() -> PyResult<(Cow<'static, [u8]>, usize, usize)> {
 }
 
 #[pyfunction]
-fn paste_file_list() -> PyResult<Vec<String>> {
+fn paste_file_list() -> PyResult<Vec<std::path::PathBuf>> {
     let mut cb = get_clipboard()?;
     let file_list = cb.get().file_list().map_err(to_exc)?;
-    let file_list = file_list.into_iter().map(|s| s.as_os_str().to_string_lossy().into_owned()).collect();
 
     Ok(file_list)
 }

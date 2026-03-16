@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from time import sleep
+from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -115,6 +116,23 @@ def test_copy_file_list(
     assert actual == file_list
 
 
+def test_copy_file_list_pathlike(
+    tmp_path,
+    read_clipboard_file_list: ReadClipboardFileList,
+    paste_file_list: WriteClipboardFileList,
+):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    copykitten.copy_file_list([file1, file2])
+    sleep(SLEEP_TIME)
+
+    actual = read_clipboard_file_list()
+
+    assert actual == [str(file1), str(file2)]
+
+
 def test_paste_image(
     test_image: Image.Image, write_clipboard_image: WriteClipboardImage
 ):
@@ -143,7 +161,7 @@ def test_paste_file_list(
 
     actual = copykitten.paste_file_list()
 
-    assert actual == file_list
+    assert actual == [Path(file1), Path(file2)]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
