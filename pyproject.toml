@@ -38,7 +38,7 @@ profile = "black"
 
 [tool.vulture]
 paths = ["python", "tests"]
-ignore_names = ["read_*", "write_*"]
+min_confidence = 100
 
 [tool.maturin]
 python-source = "python"
