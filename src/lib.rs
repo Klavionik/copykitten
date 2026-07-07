@@ -4,11 +4,11 @@ extern crate core;
 use arboard::SetExtLinux;
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
-#[cfg(target_os = "linux")]
-use std::fs::File;
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
+#[cfg(target_os = "linux")]
+use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard};
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);

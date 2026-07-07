@@ -3,7 +3,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Callable, Generic, TypeVar, cast, List
+from typing import Callable, Generic, List, TypeVar, cast
 
 from PIL import Image
 
@@ -11,8 +11,8 @@ ReadClipboard = Callable[[], str]
 WriteClipboard = Callable[[str], None]
 ReadClipboardImage = Callable[[], Image.Image]
 WriteClipboardImage = Callable[[Image.Image], None]
+ReadClipboardFileList = Callable[[], List[Path]]
 WriteClipboardFileList = Callable[[List[str]], None]
-ReadClipboardFileList = Callable[[], List[str]]
 
 T = TypeVar("T")
 
@@ -39,8 +39,8 @@ class Clipboard:
     write = Resolver[WriteClipboard]()
     read_image = Resolver[ReadClipboardImage]()
     write_image = Resolver[WriteClipboardImage]()
-    write_file_list = Resolver[WriteClipboardFileList]()
     read_file_list = Resolver[ReadClipboardFileList]()
+    write_file_list = Resolver[WriteClipboardFileList]()
 
 
 def read_macos() -> str:
@@ -52,9 +52,7 @@ def write_macos(content: str) -> None:
 
 
 def read_image_macos() -> Image.Image:
-    data = subprocess.check_output(
-        ("osascript", "-e", "get the clipboard as «class PNGf»")
-    )
+    data = subprocess.check_output(("osascript", "-e", "get the clipboard as «class PNGf»"))
     # On macOS data looks like this: '«data PNGf<hex-string>»\n'.
     # So it has to be stripped and converted from hex.
     hex_string = data[11:-3].decode()
@@ -82,10 +80,10 @@ def write_image_macos(img: Image.Image) -> None:
 
 def _require_appkit():
     try:
-        from AppKit import NSPasteboard, NSFilenamesPboardType
+        from AppKit import NSFilenamesPboardType, NSPasteboard
 
         return NSPasteboard, NSFilenamesPboardType
-    except (ImportError, ModuleNotFoundError):
+    except ImportError:
         import pytest
 
         pytest.skip("AppKit not available (requires pyobjc)")
@@ -186,8 +184,7 @@ def write_file_list_win(file_list: List[str]) -> None:
     script = (
         "Add-Type -Assembly System.Windows.Forms; "
         "$col = New-Object System.Collections.Specialized.StringCollection; "
-        "$col.AddRange(@(%s)); "
-        % paths_ps
+        "$col.AddRange(@(%s)); " % paths_ps
         + "[System.Windows.Forms.Clipboard]::SetFileDropList($col)"
     )
     subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)
@@ -231,9 +228,7 @@ def write_linux(content: str) -> None:
 
 
 def read_image_linux() -> Image.Image:
-    data = subprocess.check_output(
-        ("xclip", "-sel", "clipboard", "-o", "-target", "image/png")
-    )
+    data = subprocess.check_output(("xclip", "-sel", "clipboard", "-o", "-target", "image/png"))
     buffer = io.BytesIO(data)
     return Image.open(buffer, formats=["png"])
 

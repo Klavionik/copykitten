@@ -6,11 +6,11 @@ from PIL import Image
 from tests.clipboard import (
     Clipboard,
     ReadClipboard,
+    ReadClipboardFileList,
     ReadClipboardImage,
     WriteClipboard,
-    WriteClipboardImage,
     WriteClipboardFileList,
-    ReadClipboardFileList,
+    WriteClipboardImage,
 )
 
 
