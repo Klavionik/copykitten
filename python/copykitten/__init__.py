@@ -1,15 +1,31 @@
-from typing import Tuple
+from __future__ import annotations
+
+import os
+import pathlib
+from typing import List, Tuple, Union
 
 from ._copykitten import CopykittenError
 from ._copykitten import clear as _clear
 from ._copykitten import copy as _copy
+from ._copykitten import copy_file_list as _copy_file_list
+from ._copykitten import copy_file_list_wait as _copy_file_list_wait
 from ._copykitten import copy_image as _copy_image
 from ._copykitten import copy_image_wait as _copy_image_wait
 from ._copykitten import copy_wait as _copy_wait
 from ._copykitten import paste as _paste
+from ._copykitten import paste_file_list as _paste_file_list
 from ._copykitten import paste_image as _paste_image
 
-__all__ = ["copy", "paste", "clear", "copy_image", "paste_image", "CopykittenError"]
+__all__ = [
+    "copy",
+    "paste",
+    "clear",
+    "copy_image",
+    "paste_image",
+    "copy_file_list",
+    "paste_file_list",
+    "CopykittenError",
+]
 
 CopykittenError.__doc__ = """\
 Raised if anything went wrong during any clipboard operation.
@@ -83,3 +99,28 @@ def paste_image() -> Tuple[bytes, int, int]:
     :return: A 3-tuple of raw RGBA pixels, width, and height.
     """
     return _paste_image()
+
+
+def copy_file_list(file_list: List[Union[str, os.PathLike[str]]], *, detach: bool = False) -> None:
+    """
+    Copies a list of file paths into the clipboard.
+
+    :param file_list: A list of file paths to copy.
+    :param detach: Spawn a background process to keep the file list available after exit.
+    :raises CopykittenError: Raised if the file list cannot be copied into the clipboard.
+    :raises TypeError: Raised if `file_list` is not a list of strings or path-like objects.
+    """
+    if detach:
+        _copy_file_list_wait(file_list)
+    else:
+        _copy_file_list(file_list)
+
+
+def paste_file_list() -> List[pathlib.Path]:
+    """
+    Returns a list of file paths from the clipboard.
+
+    :raises CopykittenError: Raised if there's no file list in the clipboard.
+    :return: A list of file paths.
+    """
+    return _paste_file_list()

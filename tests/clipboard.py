@@ -3,7 +3,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Callable, Generic, TypeVar, cast
+from typing import Callable, Generic, List, TypeVar, cast
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 from PIL import Image
 
@@ -11,6 +13,8 @@ ReadClipboard = Callable[[], str]
 WriteClipboard = Callable[[str], None]
 ReadClipboardImage = Callable[[], Image.Image]
 WriteClipboardImage = Callable[[Image.Image], None]
+ReadClipboardFileList = Callable[[], List[Path]]
+WriteClipboardFileList = Callable[[List[str]], None]
 
 T = TypeVar("T")
 
@@ -37,6 +41,8 @@ class Clipboard:
     write = Resolver[WriteClipboard]()
     read_image = Resolver[ReadClipboardImage]()
     write_image = Resolver[WriteClipboardImage]()
+    read_file_list = Resolver[ReadClipboardFileList]()
+    write_file_list = Resolver[WriteClipboardFileList]()
 
 
 def read_macos() -> str:
@@ -72,6 +78,25 @@ def write_image_macos(img: Image.Image) -> None:
         )
 
         subprocess.run(cmd, check=True)
+
+
+def read_file_list_macos() -> List[str]:
+    from AppKit import NSFilenamesPboardType, NSPasteboard
+
+    pb = NSPasteboard.generalPasteboard()
+    types = pb.types()
+    if NSFilenamesPboardType in types:
+        file_paths = pb.propertyListForType_(NSFilenamesPboardType)
+        return list(file_paths)
+    return []
+
+
+def write_file_list_macos(file_list: List[str]) -> None:
+    from AppKit import NSFilenamesPboardType, NSPasteboard
+
+    pb = NSPasteboard.generalPasteboard()
+    pb.declareTypes_owner_([NSFilenamesPboardType], None)
+    pb.setPropertyList_forType_(file_list, NSFilenamesPboardType)
 
 
 def read_win() -> str:
@@ -129,6 +154,47 @@ def write_image_win(img: Image.Image) -> None:
         )
     finally:
         tmp_file.unlink()
+
+
+def read_file_list_win() -> List[str]:
+    result = subprocess.check_output(
+        (
+            "powershell.exe",
+            "-NoProfile",
+            "-Command",
+            "Add-Type -Assembly System.Windows.Forms; "
+            "[System.Windows.Forms.Clipboard]::GetFileDropList() | ForEach-Object { $_ }",
+        )
+    )
+    return [line.strip() for line in result.decode().splitlines() if line.strip()]
+
+
+def write_file_list_win(file_list: List[str]) -> None:
+    # Build a PowerShell StringCollection from the provided paths and set it as clipboard.
+    paths_ps = ", ".join("'%s'" % p.replace("'", "''") for p in file_list)
+    script = (
+        "Add-Type -Assembly System.Windows.Forms; "
+        "$col = New-Object System.Collections.Specialized.StringCollection; "
+        "$col.AddRange(@(%s)); " % paths_ps
+        + "[System.Windows.Forms.Clipboard]::SetFileDropList($col)"
+    )
+    subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)
+
+
+def read_file_list_linux() -> List[str]:
+    result = subprocess.check_output(
+        ("xclip", "-sel", "clipboard", "-o", "-target", "text/uri-list")
+    )
+    return [url2pathname(urlparse(line).path) for line in result.decode().splitlines()]
+
+
+def write_file_list_linux(file_list: List[str]) -> None:
+    uri_list = "\n".join(Path(p).as_uri() for p in file_list)
+    subprocess.run(
+        ("xclip", "-sel", "clipboard", "-i", "-target", "text/uri-list"),
+        input=uri_list.encode(),
+        check=True,
+    )
 
 
 def read_linux() -> str:

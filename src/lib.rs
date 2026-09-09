@@ -7,6 +7,7 @@ use daemonize::{Daemonize, Outcome};
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use std::borrow::Cow;
+#[cfg(target_os = "linux")]
 use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard};
 
@@ -115,6 +116,30 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
 }
 
 #[pyfunction]
+fn copy_file_list(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
+    let mut cb = get_clipboard()?;
+
+    cb.set().file_list(&file_list).map_err(to_exc)
+}
+
+#[cfg(not(target_os = "linux"))]
+#[pyfunction]
+fn copy_file_list_wait(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
+    copy_file_list(file_list)
+}
+
+#[cfg(target_os = "linux")]
+#[pyfunction]
+fn copy_file_list_wait(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
+    with_daemon(|| {
+        let mut cb = arboard::Clipboard::new().unwrap();
+        cb.set().wait().file_list(&file_list).unwrap();
+    })?;
+
+    Ok(())
+}
+
+#[pyfunction]
 fn paste() -> PyResult<String> {
     let mut cb = get_clipboard()?;
     let content = cb.get_text().map_err(to_exc)?;
@@ -128,6 +153,14 @@ fn paste_image() -> PyResult<(Cow<'static, [u8]>, usize, usize)> {
     let image = cb.get_image().map_err(to_exc)?;
 
     Ok((image.bytes, image.width, image.height))
+}
+
+#[pyfunction]
+fn paste_file_list() -> PyResult<Vec<std::path::PathBuf>> {
+    let mut cb = get_clipboard()?;
+    let file_list = cb.get().file_list().map_err(to_exc)?;
+
+    Ok(file_list)
 }
 
 #[pyfunction]
@@ -146,6 +179,9 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(clear, module)?)?;
     module.add_function(wrap_pyfunction!(copy_image, module)?)?;
     module.add_function(wrap_pyfunction!(copy_image_wait, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_file_list, module)?)?;
+    module.add_function(wrap_pyfunction!(copy_file_list_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
+    module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
     Ok(())
 }
