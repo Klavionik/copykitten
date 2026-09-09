@@ -118,7 +118,6 @@ fn copy_image_wait(content: Cow<[u8]>, width: usize, height: usize) -> PyResult<
 #[pyfunction]
 fn copy_file_list(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
     let mut cb = get_clipboard()?;
-    let file_list: Vec<&std::path::Path> = file_list.iter().map(|p| p.as_path()).collect();
 
     cb.set().file_list(&file_list).map_err(to_exc)
 }
@@ -132,8 +131,6 @@ fn copy_file_list_wait(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
 #[cfg(target_os = "linux")]
 #[pyfunction]
 fn copy_file_list_wait(file_list: Vec<std::path::PathBuf>) -> PyResult<()> {
-    let file_list: Vec<&std::path::Path> = file_list.iter().map(|p| p.as_path()).collect();
-
     with_daemon(|| {
         let mut cb = arboard::Clipboard::new().unwrap();
         cb.set().wait().file_list(&file_list).unwrap();

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import pathlib
 from typing import List, Tuple, Union
@@ -99,11 +101,11 @@ def paste_image() -> Tuple[bytes, int, int]:
     return _paste_image()
 
 
-def copy_file_list(file_list: List[Union[str, os.PathLike]], *, detach: bool = False) -> None:
+def copy_file_list(file_list: List[Union[str, os.PathLike[str]]], *, detach: bool = False) -> None:
     """
     Copies a list of file paths into the clipboard.
 
-    :param file_list: A list of file paths to copy. Accepts strings and os.PathLike objects.
+    :param file_list: A list of file paths to copy.
     :param detach: Spawn a background process to keep the file list available after exit.
     :raises CopykittenError: Raised if the file list cannot be copied into the clipboard.
     :raises TypeError: Raised if `file_list` is not a list of strings or path-like objects.
@@ -119,6 +121,6 @@ def paste_file_list() -> List[pathlib.Path]:
     Returns a list of file paths from the clipboard.
 
     :raises CopykittenError: Raised if there's no file list in the clipboard.
-    :return: A list of file paths as pathlib.Path objects.
+    :return: A list of file paths.
     """
     return _paste_file_list()

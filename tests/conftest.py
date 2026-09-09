@@ -45,13 +45,13 @@ def write_clipboard_image(clipboard) -> WriteClipboardImage:
 
 
 @pytest.fixture(scope="session")
-def paste_file_list(clipboard) -> WriteClipboardFileList:
-    return clipboard.write_file_list
+def read_clipboard_file_list(clipboard) -> ReadClipboardFileList:
+    return clipboard.read_file_list
 
 
 @pytest.fixture(scope="session")
-def read_clipboard_file_list(clipboard) -> ReadClipboardFileList:
-    return clipboard.read_file_list
+def paste_file_list(clipboard) -> WriteClipboardFileList:
+    return clipboard.write_file_list
 
 
 @pytest.fixture(autouse=True)

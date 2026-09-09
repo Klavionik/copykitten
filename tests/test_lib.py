@@ -101,7 +101,6 @@ def test_copy_image(test_image: Image.Image, read_clipboard_image: ReadClipboard
 def test_copy_file_list(
     tmp_path: Path,
     read_clipboard_file_list: ReadClipboardFileList,
-    paste_file_list: WriteClipboardFileList,
 ):
     file1 = tmp_path / "file1.txt"
     file2 = tmp_path / "file2.txt"
@@ -114,6 +113,22 @@ def test_copy_file_list(
     actual = read_clipboard_file_list()
 
     assert actual == file_list
+
+
+def test_copy_file_list_pathlike(
+    tmp_path: Path,
+    read_clipboard_file_list: ReadClipboardFileList,
+):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    copykitten.copy_file_list([file1, file2])
+    sleep(SLEEP_TIME)
+
+    actual = read_clipboard_file_list()
+
+    assert actual == [str(file1), str(file2)]
 
 
 def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipboardImage):
@@ -129,7 +144,6 @@ def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipbo
 
 def test_paste_file_list(
     tmp_path: Path,
-    read_clipboard_file_list: ReadClipboardFileList,
     paste_file_list: WriteClipboardFileList,
 ):
     file1 = tmp_path / "file1.txt"
@@ -203,6 +217,28 @@ copykitten.copy_image(image, {test_image.width}, {test_image.height}, detach=Tru
     assert pasted_image.tobytes() == test_image.tobytes()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
+def test_copy_file_list_detach(
+    tmp_path: Path,
+    read_clipboard_file_list: ReadClipboardFileList,
+):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    file_list = [str(file1), str(file2)]
+    code = f"""\
+import copykitten
+file_list = {file_list}
+copykitten.copy_file_list(file_list, detach=True)
+    """
+    subprocess.check_call(["python", "-c", code])
+
+    actual = read_clipboard_file_list()
+
+    assert actual == file_list
+
+
 @pytest.mark.skipif(
     sys.platform == "linux", reason="Check that detach doesn't break things on Win/Mac"
 )
@@ -212,3 +248,23 @@ def test_copy_detach_not_linux(read_clipboard: ReadClipboard):
     actual = read_clipboard()
 
     assert actual == "text"
+
+
+@pytest.mark.skipif(
+    sys.platform == "linux", reason="Check that detach doesn't break things on Win/Mac"
+)
+def test_copy_file_list_detach_not_linux(
+    tmp_path: Path,
+    read_clipboard_file_list: ReadClipboardFileList,
+):
+    file1 = tmp_path / "file1.txt"
+    file2 = tmp_path / "file2.txt"
+    file1.touch()
+    file2.touch()
+    file_list = [str(file1), str(file2)]
+    copykitten.copy_file_list(file_list, detach=True)
+    sleep(SLEEP_TIME)
+
+    actual = read_clipboard_file_list()
+
+    assert actual == file_list

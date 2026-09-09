@@ -4,6 +4,8 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Callable, Generic, List, TypeVar, cast
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 from PIL import Image
 
@@ -78,19 +80,8 @@ def write_image_macos(img: Image.Image) -> None:
         subprocess.run(cmd, check=True)
 
 
-def _require_appkit():
-    try:
-        from AppKit import NSFilenamesPboardType, NSPasteboard
-
-        return NSPasteboard, NSFilenamesPboardType
-    except ImportError:
-        import pytest
-
-        pytest.skip("AppKit not available (requires pyobjc)")
-
-
 def read_file_list_macos() -> List[str]:
-    NSPasteboard, NSFilenamesPboardType = _require_appkit()
+    from AppKit import NSFilenamesPboardType, NSPasteboard
 
     pb = NSPasteboard.generalPasteboard()
     types = pb.types()
@@ -101,7 +92,7 @@ def read_file_list_macos() -> List[str]:
 
 
 def write_file_list_macos(file_list: List[str]) -> None:
-    NSPasteboard, NSFilenamesPboardType = _require_appkit()
+    from AppKit import NSFilenamesPboardType, NSPasteboard
 
     pb = NSPasteboard.generalPasteboard()
     pb.declareTypes_owner_([NSFilenamesPboardType], None)
@@ -194,24 +185,11 @@ def read_file_list_linux() -> List[str]:
     result = subprocess.check_output(
         ("xclip", "-sel", "clipboard", "-o", "-target", "text/uri-list")
     )
-    paths = []
-    for line in result.decode().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("file://"):
-            from urllib.parse import unquote
-
-            paths.append(unquote(line[7:]))
-        else:
-            paths.append(line)
-    return paths
+    return [url2pathname(urlparse(line).path) for line in result.decode().splitlines()]
 
 
 def write_file_list_linux(file_list: List[str]) -> None:
-    from urllib.parse import quote
-
-    uri_list = "\n".join("file://" + quote(p, safe="/") for p in file_list)
+    uri_list = "\n".join(Path(p).as_uri() for p in file_list)
     subprocess.run(
         ("xclip", "-sel", "clipboard", "-i", "-target", "text/uri-list"),
         input=uri_list.encode(),
