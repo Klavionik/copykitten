@@ -6,8 +6,10 @@ from PIL import Image
 from tests.clipboard import (
     Clipboard,
     ReadClipboard,
+    ReadClipboardFileList,
     ReadClipboardImage,
     WriteClipboard,
+    WriteClipboardFileList,
     WriteClipboardImage,
 )
 
@@ -40,6 +42,16 @@ def read_clipboard_image(clipboard) -> ReadClipboardImage:
 @pytest.fixture(scope="session")
 def write_clipboard_image(clipboard) -> WriteClipboardImage:
     return clipboard.write_image
+
+
+@pytest.fixture(scope="session")
+def read_clipboard_file_list(clipboard) -> ReadClipboardFileList:
+    return clipboard.read_file_list
+
+
+@pytest.fixture(scope="session")
+def paste_file_list(clipboard) -> WriteClipboardFileList:
+    return clipboard.write_file_list
 
 
 @pytest.fixture(autouse=True)
