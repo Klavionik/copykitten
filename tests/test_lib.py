@@ -98,7 +98,7 @@ def test_copy_image(test_image: Image.Image, read_clipboard_image: ReadClipboard
     assert test_image_bytes == pasted_image.tobytes()
 
 
-def test_copy_file_list(
+def test_copy_paths(
     tmp_path: Path,
     read_clipboard_file_list: ReadClipboardFileList,
 ):
@@ -106,13 +106,13 @@ def test_copy_file_list(
     file2 = tmp_path / "file2.txt"
     file1.touch()
     file2.touch()
-    file_list = [str(file1), str(file2)]
-    copykitten.copy_file_list(file_list)
+    paths = [str(file1), str(file2)]
+    copykitten.copy_paths(*paths)
     sleep(SLEEP_TIME)
 
     actual = read_clipboard_file_list()
 
-    assert actual == file_list
+    assert actual == paths
 
 
 def test_copy_file_list_pathlike(
@@ -123,7 +123,7 @@ def test_copy_file_list_pathlike(
     file2 = tmp_path / "file2.txt"
     file1.touch()
     file2.touch()
-    copykitten.copy_file_list([file1, file2])
+    copykitten.copy_paths(*[file1, file2])
     sleep(SLEEP_TIME)
 
     actual = read_clipboard_file_list()
@@ -142,7 +142,7 @@ def test_paste_image(test_image: Image.Image, write_clipboard_image: WriteClipbo
     assert height == test_image.height
 
 
-def test_paste_file_list(
+def test_paste_paths(
     tmp_path: Path,
     write_clipboard_file_list: WriteClipboardFileList,
 ):
@@ -150,11 +150,11 @@ def test_paste_file_list(
     file2 = tmp_path / "file2.txt"
     file1.touch()
     file2.touch()
-    file_list = [str(file1), str(file2)]
-    write_clipboard_file_list(file_list)
+    paths = [str(file1), str(file2)]
+    write_clipboard_file_list(paths)
     sleep(SLEEP_TIME)
 
-    actual = copykitten.paste_file_list()
+    actual = copykitten.paste_paths()
 
     assert actual == [Path(file1), Path(file2)]
 
@@ -230,7 +230,7 @@ def test_copy_file_list_detach(
     code = f"""\
 import copykitten
 file_list = {file_list}
-copykitten.copy_file_list(file_list, detach=True)
+copykitten.copy_paths(*file_list, detach=True)
     """
     subprocess.check_call(["python", "-c", code])
 
@@ -262,7 +262,7 @@ def test_copy_file_list_detach_not_linux(
     file1.touch()
     file2.touch()
     file_list = [str(file1), str(file2)]
-    copykitten.copy_file_list(file_list, detach=True)
+    copykitten.copy_paths(*file_list, detach=True)
     sleep(SLEEP_TIME)
 
     actual = read_clipboard_file_list()
