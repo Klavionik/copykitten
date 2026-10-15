@@ -1,13 +1,13 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+# See https://prek.j178.dev/ for more information
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+  - repo: builtin
     hooks:
       - id: trailing-whitespace
         types: [text]
       - id: end-of-file-fixer
         types: [text]
+      - id: requirements-txt-fixer
+      - id: mixed-line-ending
 
   - repo: local
     hooks:
