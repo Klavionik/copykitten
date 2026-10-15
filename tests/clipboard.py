@@ -33,7 +33,7 @@ class Resolver(Generic[T]):
         try:
             return cast(T, variables[function_name])
         except KeyError:
-            raise RuntimeError(f"Cannot find suitable clipboard for {sys.platform}.")
+            raise RuntimeError(f"Cannot find suitable clipboard for {sys.platform}.") from None
 
 
 class Clipboard:
@@ -175,7 +175,8 @@ def write_file_list_win(file_list: List[str]) -> None:
     script = (
         "Add-Type -Assembly System.Windows.Forms; "
         "$col = New-Object System.Collections.Specialized.StringCollection; "
-        "$col.AddRange(@(%s)); " % paths_ps
+        "$col.AddRange(@(%s)); "
+        % paths_ps
         + "[System.Windows.Forms.Clipboard]::SetFileDropList($col)"
     )
     subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)

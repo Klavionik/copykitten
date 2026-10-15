@@ -1,5 +1,5 @@
 # copykitten
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![PyPI - Version](https://img.shields.io/pypi/v/copykitten)](https://pypi.org/project/copykitten)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/copykitten)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/copykitten)](https://pypistats.org/packages/copykitten)
@@ -87,9 +87,9 @@ To copy or paste file paths, use `copykitten.copy_paths` and
 import copykitten
 import pathlib
 
-copykitten.copy_paths('/home/user/.bashrc') # Copy one path.
-copykitten.copy_paths('/home/user/.bashrc', '/home/user/.bash_aliases') # Or multiple.
-copykitten.copy_paths(pathlib.Path('C://Users/user/file.txt'))  # Or a pathlib.Path.
+copykitten.copy_paths("/home/user/.bashrc")  # Copy one path.
+copykitten.copy_paths("/home/user/.bashrc", "/home/user/.bash_aliases")  # Or multiple.
+copykitten.copy_paths(pathlib.Path("C://Users/user/file.txt"))  # Or a pathlib.Path.
 ```
 
 ```python
