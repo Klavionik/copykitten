@@ -16,4 +16,4 @@ jobs:
       - uses: actions/setup-python@v5
       - uses: j178/prek-action@v3.0.1
         with:
-          extra_args: "--all-files --hook-stage manual"
+          extra-args: "--all-files --hook-stage manual"
