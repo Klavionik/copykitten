@@ -79,6 +79,28 @@ import copykitten
 copykitten.clear()
 ```
 
+## File paths
+To copy or paste file paths, use `copykitten.copy_paths` and
+`copykitten.paste_paths` functions.
+
+```python
+import copykitten
+import pathlib
+
+copykitten.copy_paths('/home/user/.bashrc') # Copy one path.
+copykitten.copy_paths('/home/user/.bashrc', '/home/user/.bash_aliases') # Or multiple.
+copykitten.copy_paths(pathlib.Path('C://Users/user/file.txt'))  # Or a pathlib.Path.
+```
+
+```python
+import copykitten
+
+paths = copykitten.paste_paths()
+```
+
+Note that the files you are about to copy into the clipboard must exist, otherwise an
+exception will be raised.
+
 ## Detach mode
 Both `copy` and `copy_image` functions support an optional keyword-only bool parameter `detach` (defaults to `False`).
 This feature is only relevant on Linux; using it on Windows or macOS is a no-op.

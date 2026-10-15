@@ -5,17 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.1.0] - 2026-10-15
 ### Added
-- Support for copying and pasting file lists (i.e., lists of file paths) with
-`copy_file_list` and `paste_file_list`.
+- Support for copying and pasting file paths with `copy_paths` and `paste_paths`.
+  Thanks to [fizzi01](https://github.com/fizzi01) for this contribution!
+
+### Changed
+- `arboard` was bumped to 3.7.0.
 
 ## [2.0.0] - 2025-09-21
 ### Added
-- `copy` and `copy_image` functions now support the detach mode on Linux. In detach mode, copying will spawn
+- `copy` and `copy_image` functions now support detach mode on Linux. In detach mode, copying will spawn
 a daemon that will manage the copied content instead of the parent process, useful for short scripts. See README for
 details.
 ### Changed
-- The public API now have proper docstrings visible via the built-in `help` function.
+- The public API now has proper docstrings visible via the built-in `help` function.
 - `arboard` was bumped to 3.6.1, resulting in a **breaking change** to `paste`. Previously, if you cleared the
 clipboard after copying text data into it, `paste` would have returned an empty string. Now it will raise an exception.
 There are also multiple improvements and bug fixes to how image data is handled.
