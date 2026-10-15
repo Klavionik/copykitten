@@ -49,48 +49,39 @@ repos:
         types: [rust]
         pass_filenames: false
 
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
     hooks:
-      - id: black
+      - id: ruff-check
+        name: ruff fix
+        args:
+          - --fix
+          - --target-version=py310
         stages:
           - commit
-        types: [python]
 
-      - id: black
-        name: black-check
+      - id: ruff-check
+        name: ruff check
+        args:
+          - --target-version=py310
+        stages:
+          - manual
+
+      - id: ruff-format
+        name: ruff fmt
+        args:
+          - --target-version=py310
+        stages:
+          - commit
+
+      - id: ruff-format
+        name: ruff fmt check
         args:
           - --check
           - --diff
+          - --target-version=py310
         stages:
           - manual
-        types: [python]
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        stages:
-          - commit
-          - manual
-        additional_dependencies: [flake8-bugbear]
-        types: [python]
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        stages:
-          - commit
-        types: [python]
-
-      - id: isort
-        name: isort-check
-        args:
-          - --check-only
-        stages:
-          - manual
-        types: [python]
 
   - repo: https://github.com/jendrikseipp/vulture
     rev: 'v2.11'

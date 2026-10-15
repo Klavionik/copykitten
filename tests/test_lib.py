@@ -4,10 +4,10 @@ import sys
 from pathlib import Path
 from time import sleep
 
+import copykitten
 import pytest
 from PIL import Image
 
-import copykitten
 from tests.clipboard import (
     ReadClipboard,
     ReadClipboardFileList,

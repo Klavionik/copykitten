@@ -87,9 +87,9 @@ To copy or paste file paths, use `copykitten.copy_paths` and
 import copykitten
 import pathlib
 
-copykitten.copy_paths('/home/user/.bashrc') # Copy one path.
-copykitten.copy_paths('/home/user/.bashrc', '/home/user/.bash_aliases') # Or multiple.
-copykitten.copy_paths(pathlib.Path('C://Users/user/file.txt'))  # Or a pathlib.Path.
+copykitten.copy_paths("/home/user/.bashrc")  # Copy one path.
+copykitten.copy_paths("/home/user/.bashrc", "/home/user/.bash_aliases")  # Or multiple.
+copykitten.copy_paths(pathlib.Path("C://Users/user/file.txt"))  # Or a pathlib.Path.
 ```
 
 ```python

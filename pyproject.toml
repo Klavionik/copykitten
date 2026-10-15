@@ -29,11 +29,11 @@ classifiers = [
 ]
 dynamic = ["version"]
 
-[tool.black]
+[tool.ruff]
 line-length = 100
 
-[tool.isort]
-profile = "black"
+[tool.ruff.lint]
+select = ["E", "F", "B", "I"]
 
 [tool.vulture]
 paths = ["python", "tests"]
