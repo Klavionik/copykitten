@@ -1,19 +1,80 @@
+extern crate clipboard_master;
 extern crate core;
+use clipboard_master::{CallbackResult, ClipboardHandler, Master, Shutdown};
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
+use log::debug;
 use pyo3::create_exception;
 use pyo3::prelude::*;
+use pyo3::types::PyFunction;
 use std::borrow::Cow;
 #[cfg(target_os = "linux")]
 use std::fs::File;
+use std::io;
 use std::sync::{LazyLock, Mutex, MutexGuard};
+use std::time::Duration;
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
 static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
+
+struct Handler {
+    callback: Py<PyFunction>,
+}
+
+#[pyclass]
+struct ChangeEvent;
+
+#[pyclass]
+struct Stop {
+    channel: Option<Shutdown>,
+}
+
+#[pymethods]
+impl Stop {
+    fn __call__(&mut self) -> PyResult<()> {
+        let channel = self
+            .channel
+            .take()
+            .ok_or_else(|| CopykittenError::new_err("The listener is already removed."))?;
+
+        debug!("Send shutdown signal to the clipboard event master.");
+        channel.signal();
+
+        Ok(())
+    }
+}
+
+impl ClipboardHandler for Handler {
+    fn on_clipboard_change(&mut self) -> CallbackResult {
+        debug!("Received change event.");
+
+        let event = ChangeEvent {};
+        let args = (event,);
+
+        Python::attach(|py| {
+            debug!("Firing the event handler.");
+            match self.callback.call1(py, args) {
+                Ok(_) => debug!("Event handler complete."),
+                Err(e) => debug!("Event handler error: {:?}.", e),
+            }
+        });
+
+        CallbackResult::Next
+    }
+
+    fn on_clipboard_error(&mut self, error: io::Error) -> CallbackResult {
+        debug!("Received clipboard error: {}", error);
+        CallbackResult::Next
+    }
+
+    fn sleep_interval(&self) -> Duration {
+        Duration::from_millis(100)
+    }
+}
 
 fn initialize_clipboard() -> Option<Mutex<arboard::Clipboard>> {
     let maybe_clipboard = arboard::Clipboard::new().ok();
@@ -170,8 +231,32 @@ fn clear() -> PyResult<()> {
     cb.clear().map_err(to_exc)
 }
 
+#[pyfunction]
+fn listen(py: Python<'_>, callback: Py<PyFunction>) -> PyResult<Stop> {
+    let handler = Handler { callback };
+    let mut master = Master::new(handler).expect("Create monitor.");
+    let shutdown = master.shutdown_channel();
+
+    py.detach(|| {
+        std::thread::spawn(move || {
+            debug!("Running clipboard event master.");
+
+            match master.run() {
+                Ok(_) => debug!("Clipboard event master complete."),
+                Err(e) => debug!("Clipboard event master error: {:?}", e),
+            }
+        });
+    });
+
+    Ok(Stop {
+        channel: Some(shutdown),
+    })
+}
+
 #[pymodule]
 fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    pyo3_log::init();
+
     module.add("CopykittenError", module.py().get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(copy_wait, module)?)?;
@@ -183,5 +268,9 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(copy_file_list_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
     module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
+    module.add_function(wrap_pyfunction!(listen, module)?)?;
+    module.add_class::<ChangeEvent>()?;
+    module.add_class::<Stop>()?;
+
     Ok(())
 }
