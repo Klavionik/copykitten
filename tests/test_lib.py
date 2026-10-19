@@ -6,6 +6,7 @@ from time import sleep
 
 import copykitten
 import pytest
+from copykitten import ChangeEvent
 from PIL import Image
 
 from tests.clipboard import (
@@ -268,3 +269,34 @@ def test_copy_file_list_detach_not_linux(
     actual = read_clipboard_file_list()
 
     assert actual == file_list
+
+
+@pytest.mark.repeat(ITERATIONS)
+def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
+    box = []
+
+    def cb(event: ChangeEvent) -> None:
+        try:
+            box.append(event)
+        except Exception as e:
+            box.append(e)
+
+    stop = copykitten.listen(cb)
+    sleep(0.3)
+
+    write_clipboard("text")
+    sleep(0.3)
+    assert len(box) == 1
+
+    write_clipboard("text 2")
+    sleep(0.3)
+
+    assert len(box) == 2
+
+    stop()
+
+    write_clipboard("text 3")
+    sleep(0.3)
+
+    assert len(box) == 2
+    assert not any(isinstance(item, Exception) for item in box)
