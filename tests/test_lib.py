@@ -281,22 +281,20 @@ def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
         except Exception as e:
             box.append(e)
 
-    stop = copykitten.listen(cb)
+    callback_id = copykitten.listen(cb)
     sleep(0.3)
 
     write_clipboard("text")
     sleep(0.3)
-    assert len(box) == 1
 
-    write_clipboard("text 2")
+    write_clipboard("'text 2'")
     sleep(0.3)
 
-    assert len(box) == 2
+    copykitten.unlisten(callback_id)
 
-    stop()
-
-    write_clipboard("text 3")
+    write_clipboard("text3")
     sleep(0.3)
 
-    assert len(box) == 2
     assert not any(isinstance(item, Exception) for item in box)
+    # Set-Clipboard commandlet used by WriteClipboard sends three events per one copy operation.
+    assert len(box) / 3 == 2
