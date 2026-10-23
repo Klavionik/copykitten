@@ -281,6 +281,10 @@ def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
         except Exception as e:
             box.append(e)
 
+    # Set-Clipboard commandlet used by WriteClipboard on Windows
+    # sends three events per one copy operation. ¯\_(ツ)_/¯
+    expected_len = 2 if sys.platform != "win32" else 6
+
     callback_id = copykitten.listen(cb)
     sleep(0.3)
 
@@ -296,5 +300,4 @@ def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
     sleep(0.3)
 
     assert not any(isinstance(item, Exception) for item in box)
-    # Set-Clipboard commandlet used by WriteClipboard sends three events per one copy operation.
-    assert len(box) / 3 == 2
+    assert len(box) == expected_len
