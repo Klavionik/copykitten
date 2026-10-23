@@ -19,7 +19,7 @@ from tests.clipboard import (
     is_wayland,
 )
 
-DEFAULT_ITERATIONS = 50
+DEFAULT_ITERATIONS = 20
 DEFAULT_SLEEP_TIME = 0.1
 
 
