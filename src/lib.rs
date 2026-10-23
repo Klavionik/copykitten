@@ -1,23 +1,94 @@
+extern crate clipboard_master;
 extern crate core;
+use clipboard_master::{CallbackResult, ClipboardHandler, Master};
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
+use log::{debug, error};
 use pyo3::create_exception;
 use pyo3::prelude::*;
+use pyo3::types::PyFunction;
 use std::borrow::Cow;
+use std::collections::HashMap;
 #[cfg(target_os = "linux")]
 use std::fs::File;
-use std::sync::{LazyLock, Mutex, MutexGuard};
+use std::sync::{LazyLock, Mutex, MutexGuard, OnceLock};
+use std::time::Duration;
+use std::{io, thread};
+use uuid::Uuid;
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
 static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
+static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
+
+struct Handler {}
+
+#[pyclass]
+struct ChangeEvent;
+
+fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>)) {
+    let (id, func) = callback;
+    let event = ChangeEvent {};
+
+    debug!("Firing callback {}.", id);
+
+    match func.call1(py, (event,)) {
+        Ok(_) => debug!("Callback complete."),
+        Err(e) => debug!("Callback error: {:?}.", e),
+    }
+}
+
+fn spawn_event_master() {
+    debug!("Spawning event master.");
+    let handler = Handler {};
+
+    match Master::new(handler) {
+        Ok(mut master) => {
+            debug!("Running event master.");
+
+            match master.run() {
+                Ok(_) => debug!("Event master complete."),
+                Err(e) => debug!("Event master error: {:?}", e),
+            }
+        }
+        Err(err) => error!("Couldn't start event master: {:?}.", err),
+    }
+}
+
+impl ClipboardHandler for Handler {
+    fn on_clipboard_change(&mut self) -> CallbackResult {
+        debug!("Received change event.");
+
+        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+            Ok(guard) => Python::attach(|py| {
+                guard.iter().for_each(|callback| run_callback(py, callback));
+            }),
+            Err(_) => error!("Callbacks lock is poisoned."),
+        }
+
+        CallbackResult::Next
+    }
+
+    fn on_clipboard_error(&mut self, error: io::Error) -> CallbackResult {
+        debug!("Received clipboard error: {}", error);
+        CallbackResult::Next
+    }
+
+    fn sleep_interval(&self) -> Duration {
+        Duration::from_millis(100)
+    }
+}
 
 fn initialize_clipboard() -> Option<Mutex<arboard::Clipboard>> {
     let maybe_clipboard = arboard::Clipboard::new().ok();
     maybe_clipboard.map(Mutex::new)
+}
+
+fn initialize_callbacks() -> Mutex<HashMap<Uuid, Py<PyFunction>>> {
+    Mutex::new(HashMap::new())
 }
 
 fn raise_exc(text: &'static str) -> PyErr {
@@ -170,8 +241,35 @@ fn clear() -> PyResult<()> {
     cb.clear().map_err(to_exc)
 }
 
+#[pyfunction]
+fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
+    let mut callbacks = CALLBACKS
+        .get_or_init(initialize_callbacks)
+        .lock()
+        .map_err(|_| raise_exc("Cannot add a new callback, lock is poisoned."))?;
+
+    let id = Uuid::new_v4();
+    callbacks.insert(id, callback);
+
+    Ok(id)
+}
+
+#[pyfunction]
+fn unlisten(id: Uuid) -> PyResult<bool> {
+    let mut callbacks = CALLBACKS
+        .get_or_init(initialize_callbacks)
+        .lock()
+        .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
+
+    let removed = callbacks.remove(&id).is_some();
+
+    Ok(removed)
+}
+
 #[pymodule]
 fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    pyo3_log::init();
+
     module.add("CopykittenError", module.py().get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(copy_wait, module)?)?;
@@ -183,5 +281,11 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(copy_file_list_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
     module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
+    module.add_function(wrap_pyfunction!(listen, module)?)?;
+    module.add_function(wrap_pyfunction!(unlisten, module)?)?;
+    module.add_class::<ChangeEvent>()?;
+
+    thread::spawn(spawn_event_master);
+
     Ok(())
 }

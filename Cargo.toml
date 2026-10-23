@@ -10,7 +10,11 @@ crate-type = ["cdylib"]
 
 [dependencies]
 arboard = "3.7.0"
-pyo3 = { version =  "0.30.1", features = ["extension-module", "abi3-py310"] }
+clipboard-master = "4.0.0"
+log = "0.4.34"
+pyo3 = { version =  "0.29.3", features = ["extension-module", "abi3-py310", "uuid"] }
+pyo3-log = "0.13.4"
+uuid = { version = "1.29.0", features = ["v4"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 daemonize = "0.5.0"

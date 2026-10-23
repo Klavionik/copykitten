@@ -6,6 +6,7 @@ from time import sleep
 
 import copykitten
 import pytest
+from copykitten import ChangeEvent
 from PIL import Image
 
 from tests.clipboard import (
@@ -268,3 +269,37 @@ def test_copy_file_list_detach_not_linux(
     actual = read_clipboard_file_list()
 
     assert actual == file_list
+
+
+@pytest.mark.repeat(ITERATIONS)
+def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
+    box = []
+
+    def cb(event: ChangeEvent) -> None:
+        try:
+            box.append(event)
+        except Exception as e:
+            box.append(e)
+
+    # Set-Clipboard commandlet used by WriteClipboard on Windows
+    # sends three events per one copy operation. ¯\_(ツ)_/¯
+    expected_len = 6 if sys.platform == "win32" else 2
+
+    callback_id = copykitten.listen(cb)
+    sleep(0.3)
+
+    write_clipboard("text")
+    sleep(0.3)
+
+    write_clipboard("'text 2'")
+    sleep(0.3)
+
+    removed = copykitten.unlisten(callback_id)
+    sleep(0.3)
+
+    write_clipboard("text3")
+    sleep(0.3)
+
+    assert not any(isinstance(item, Exception) for item in box)
+    assert len(box) == expected_len
+    assert removed
