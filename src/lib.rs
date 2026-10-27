@@ -4,8 +4,10 @@ use clipboard_master::{CallbackResult, ClipboardHandler, Master};
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
+use chrono::{DateTime, Utc};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
+use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
 use log::{debug, error};
 use pyo3::create_exception;
 use pyo3::prelude::*;
@@ -27,11 +29,28 @@ static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new
 struct Handler {}
 
 #[pyclass]
-struct ChangeEvent;
+struct ChangeEvent {
+    created_at: DateTime<Utc>,
+}
+
+impl ChangeEvent {
+    fn new() -> Self {
+        Self {
+            created_at: Utc::now(),
+        }
+    }
+}
+
+#[pymethods]
+impl ChangeEvent {
+    fn __repr__(&self) -> String {
+        format!("ChangeEvent(created_at={})", self.created_at.to_rfc3339())
+    }
+}
 
 fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>)) {
     let (id, func) = callback;
-    let event = ChangeEvent {};
+    let event = ChangeEvent::new();
 
     debug!("Firing callback {}.", id);
 
@@ -64,6 +83,11 @@ impl ClipboardHandler for Handler {
 
         match CALLBACKS.get_or_init(initialize_callbacks).lock() {
             Ok(guard) => Python::attach(|py| {
+                if guard.is_empty() {
+                    debug!("No callbacks registered, skip event.");
+                    return;
+                }
+
                 guard.iter().for_each(|callback| run_callback(py, callback));
             }),
             Err(_) => error!("Callbacks lock is poisoned."),
@@ -251,6 +275,7 @@ fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
     let id = Uuid::new_v4();
     callbacks.insert(id, callback);
 
+    debug!("Added a new callback {}", id);
     Ok(id)
 }
 
@@ -262,13 +287,20 @@ fn unlisten(id: Uuid) -> PyResult<bool> {
         .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
 
     let removed = callbacks.remove(&id).is_some();
+    debug!("Removed callback {}, success = {}", id, removed);
 
     Ok(removed)
 }
 
 #[pymodule]
 fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    pyo3_log::init();
+    let _logger = Logger::try_with_str("copykitten=debug")
+        .unwrap()
+        .log_to_file(FileSpec::default())
+        .format(opt_format)
+        .write_mode(WriteMode::BufferAndFlush)
+        .start()
+        .unwrap();
 
     module.add("CopykittenError", module.py().get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;

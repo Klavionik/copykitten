@@ -42,12 +42,6 @@ and clipboard initialization errors in the underlying Rust library.
 More on arboard errors: https://docs.rs/arboard/latest/arboard/enum.Error.html
 """
 
-if bool(os.getenv("COPYKITTEN_DEBUG")):
-    import logging
-
-    logging.basicConfig()
-    logging.getLogger("copykitten").setLevel(logging.DEBUG)
-
 
 def copy(content: str, *, detach: bool = False) -> None:
     """
