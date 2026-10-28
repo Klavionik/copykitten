@@ -1,6 +1,6 @@
-extern crate clipboard_master;
+mod watcher;
+
 extern crate core;
-use clipboard_master::{CallbackResult, ClipboardHandler, Master};
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
@@ -17,92 +17,45 @@ use std::collections::HashMap;
 #[cfg(target_os = "linux")]
 use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard, OnceLock};
-use std::time::Duration;
-use std::{io, thread};
 use uuid::Uuid;
+use watcher::Event;
+use watcher::EventKind;
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
 static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
 static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
 
-struct Handler {}
-
 #[pyclass]
-struct ChangeEvent {
-    created_at: DateTime<Utc>,
-}
-
-impl ChangeEvent {
-    fn new() -> Self {
-        Self {
-            created_at: Utc::now(),
-        }
-    }
+struct CopykittenEvent {
+    timestamp: DateTime<Utc>,
 }
 
 #[pymethods]
-impl ChangeEvent {
+impl CopykittenEvent {
     fn __repr__(&self) -> String {
-        format!("ChangeEvent(created_at={})", self.created_at.to_rfc3339())
+        format!("CopykittenEvent(timestamp={})", self.timestamp.to_rfc3339())
     }
 }
 
-fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>)) {
+impl From<&Event> for CopykittenEvent {
+    fn from(value: &Event) -> Self {
+        match value.kind {
+            EventKind::Change => Self {
+                timestamp: value.timestamp,
+            },
+        }
+    }
+}
+
+fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>), event: &Event) {
     let (id, func) = callback;
-    let event = ChangeEvent::new();
 
     debug!("Firing callback {}.", id);
 
-    match func.call1(py, (event,)) {
+    match func.call1(py, (CopykittenEvent::from(event),)) {
         Ok(_) => debug!("Callback complete."),
         Err(e) => debug!("Callback error: {:?}.", e),
-    }
-}
-
-fn spawn_event_master() {
-    debug!("Spawning event master.");
-    let handler = Handler {};
-
-    match Master::new(handler) {
-        Ok(mut master) => {
-            debug!("Running event master.");
-
-            match master.run() {
-                Ok(_) => debug!("Event master complete."),
-                Err(e) => debug!("Event master error: {:?}", e),
-            }
-        }
-        Err(err) => error!("Couldn't start event master: {:?}.", err),
-    }
-}
-
-impl ClipboardHandler for Handler {
-    fn on_clipboard_change(&mut self) -> CallbackResult {
-        debug!("Received change event.");
-
-        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
-            Ok(guard) => Python::attach(|py| {
-                if guard.is_empty() {
-                    debug!("No callbacks registered, skip event.");
-                    return;
-                }
-
-                guard.iter().for_each(|callback| run_callback(py, callback));
-            }),
-            Err(_) => error!("Callbacks lock is poisoned."),
-        }
-
-        CallbackResult::Next
-    }
-
-    fn on_clipboard_error(&mut self, error: io::Error) -> CallbackResult {
-        debug!("Received clipboard error: {}", error);
-        CallbackResult::Next
-    }
-
-    fn sleep_interval(&self) -> Duration {
-        Duration::from_millis(100)
     }
 }
 
@@ -315,9 +268,25 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
     module.add_function(wrap_pyfunction!(listen, module)?)?;
     module.add_function(wrap_pyfunction!(unlisten, module)?)?;
-    module.add_class::<ChangeEvent>()?;
+    module.add_class::<CopykittenEvent>()?;
 
-    thread::spawn(spawn_event_master);
+    watcher::watch(|e| {
+        debug!("Received event.");
+
+        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+            Ok(guard) => Python::attach(|py| {
+                if guard.is_empty() {
+                    debug!("No callbacks registered, skip event.");
+                    return;
+                }
+
+                guard
+                    .iter()
+                    .for_each(|callback| run_callback(py, callback, e));
+            }),
+            Err(_) => error!("Callbacks lock is poisoned."),
+        }
+    });
 
     Ok(())
 }
