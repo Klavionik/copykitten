@@ -1,9 +1,8 @@
 pub mod platform;
 
+use chrono::{DateTime, Utc};
 use log::debug;
 use std::fmt::Debug;
-
-use chrono::{DateTime, Utc};
 
 pub trait Platform: Debug {
     fn listen(&self) -> impl Iterator<Item = Event>;
@@ -34,11 +33,11 @@ pub struct Watcher<T> {
     callback: Box<dyn Fn(&Event) + Send + 'static>,
 }
 
-impl<T: Platform> Watcher<T> {
-    pub fn new<F>(callback: F, platform: T) -> Self
+impl<P: Platform> Watcher<P> {
+    pub fn new<F>(callback: F, platform: P) -> Self
     where
         F: Fn(&Event) + Send + 'static,
-        T: Platform,
+        P: Platform,
     {
         Self {
             platform,
