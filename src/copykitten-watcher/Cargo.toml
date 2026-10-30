@@ -1,0 +1,10 @@
+[package]
+name = "copykitten-watcher"
+version = "2.1.0"
+edition = "2024"
+
+[dependencies]
+flexi_logger = "0.31.10"
+log = "0.4.34"
+x11rb = { version = "0.14.0", features = ["xfixes"] }
+chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
