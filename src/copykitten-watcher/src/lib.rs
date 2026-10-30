@@ -1,11 +1,15 @@
 pub mod platform;
 
+use log::debug;
+use std::fmt::Debug;
+
 use chrono::{DateTime, Utc};
 
-pub trait Platform {
+pub trait Platform: Debug {
     fn listen(&self) -> impl Iterator<Item = Event>;
 }
 
+#[derive(Debug)]
 pub struct Event {
     pub timestamp: DateTime<Utc>,
     pub kind: EventKind,
@@ -20,6 +24,7 @@ impl Event {
     }
 }
 
+#[derive(Debug)]
 pub enum EventKind {
     Change,
 }
@@ -42,13 +47,16 @@ impl<T: Platform> Watcher<T> {
     }
 
     pub fn run(&self) {
+        debug!("Run clipboard watcher using {:?}", self.platform);
+
         for event in self.platform.listen() {
             (self.callback)(&event)
         }
+
+        debug!("Stop clipboard watcher");
     }
 }
 
 pub fn watch(callback: impl Fn(&Event) + Send + 'static, platform: impl Platform) {
-    let watcher = Watcher::new(callback, platform);
-    watcher.run()
+    Watcher::new(callback, platform).run()
 }

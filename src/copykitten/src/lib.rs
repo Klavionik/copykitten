@@ -242,6 +242,29 @@ fn unlisten(id: Uuid) -> PyResult<bool> {
     Ok(removed)
 }
 
+fn start_watcher() {
+    watch(
+        |e| {
+            debug!("Received event.");
+
+            match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+                Ok(guard) => Python::attach(|py| {
+                    if guard.is_empty() {
+                        debug!("No callbacks registered, skip event.");
+                        return;
+                    }
+
+                    guard
+                        .iter()
+                        .for_each(|callback| run_callback(py, callback, e));
+                }),
+                Err(_) => error!("Callbacks lock is poisoned."),
+            }
+        },
+        platform::X11::new(),
+    );
+}
+
 #[pymodule]
 fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     let _logger = Logger::try_with_str("copykitten=debug")
@@ -267,26 +290,7 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(unlisten, module)?)?;
     module.add_class::<CopykittenEvent>()?;
 
-    watch(
-        |e| {
-            debug!("Received event.");
-
-            match CALLBACKS.get_or_init(initialize_callbacks).lock() {
-                Ok(guard) => Python::attach(|py| {
-                    if guard.is_empty() {
-                        debug!("No callbacks registered, skip event.");
-                        return;
-                    }
-
-                    guard
-                        .iter()
-                        .for_each(|callback| run_callback(py, callback, e));
-                }),
-                Err(_) => error!("Callbacks lock is poisoned."),
-            }
-        },
-        platform::stub::Stub,
-    );
+    start_watcher();
 
     Ok(())
 }
