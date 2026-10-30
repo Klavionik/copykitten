@@ -1,8 +1,8 @@
-mod platform;
+pub mod platform;
 
 use chrono::{DateTime, Utc};
 
-pub(crate) trait Platform {
+pub trait Platform {
     fn listen(&self) -> impl Iterator<Item = Event>;
 }
 
@@ -48,7 +48,7 @@ impl<T: Platform> Watcher<T> {
     }
 }
 
-pub fn watch(callback: impl Fn(&Event) + Send + 'static) {
-    let watcher = Watcher::new(callback, platform::stub::Stub);
+pub fn watch(callback: impl Fn(&Event) + Send + 'static, platform: impl Platform) {
+    let watcher = Watcher::new(callback, platform);
     watcher.run()
 }

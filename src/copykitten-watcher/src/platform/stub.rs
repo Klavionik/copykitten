@@ -1,4 +1,4 @@
-use crate::watcher::{Event, Platform};
+use crate::{Event, Platform};
 
 pub struct Stub;
 

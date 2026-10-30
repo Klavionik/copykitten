@@ -1,10 +1,9 @@
-mod watcher;
-
 extern crate core;
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
 use chrono::{DateTime, Utc};
+use copykitten_watcher::{Event, EventKind, platform, watch};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
 use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
@@ -18,8 +17,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard, OnceLock};
 use uuid::Uuid;
-use watcher::Event;
-use watcher::EventKind;
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
@@ -270,23 +267,26 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(unlisten, module)?)?;
     module.add_class::<CopykittenEvent>()?;
 
-    watcher::watch(|e| {
-        debug!("Received event.");
+    watch(
+        |e| {
+            debug!("Received event.");
 
-        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
-            Ok(guard) => Python::attach(|py| {
-                if guard.is_empty() {
-                    debug!("No callbacks registered, skip event.");
-                    return;
-                }
+            match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+                Ok(guard) => Python::attach(|py| {
+                    if guard.is_empty() {
+                        debug!("No callbacks registered, skip event.");
+                        return;
+                    }
 
-                guard
-                    .iter()
-                    .for_each(|callback| run_callback(py, callback, e));
-            }),
-            Err(_) => error!("Callbacks lock is poisoned."),
-        }
-    });
+                    guard
+                        .iter()
+                        .for_each(|callback| run_callback(py, callback, e));
+                }),
+                Err(_) => error!("Callbacks lock is poisoned."),
+            }
+        },
+        platform::stub::Stub,
+    );
 
     Ok(())
 }
