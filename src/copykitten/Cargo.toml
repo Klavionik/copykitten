@@ -1,0 +1,21 @@
+[package]
+name = "copykitten"
+version = "2.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "copykitten"
+crate-type = ["cdylib"]
+
+[dependencies]
+arboard = "3.7.0"
+flexi_logger = "0.31.10"
+chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
+log = "0.4.34"
+pyo3 = { version = "0.30.1", features = ["extension-module", "abi3-py310", "uuid", "chrono"] }
+uuid = { version = "1.29.0", features = ["v4"] }
+copykitten-watcher = { path = "../copykitten-watcher"}
+
+[target.'cfg(target_os = "linux")'.dependencies]
+daemonize = "0.5.0"
