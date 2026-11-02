@@ -16,6 +16,8 @@ pub struct X11 {
 
 impl Platform for X11 {
     fn listen(&self) -> impl Iterator<Item = OutEvent> {
+        debug!("Set up selection event listener");
+
         let clipboard = self.get_clipboard_atom();
 
         self.conn
@@ -38,18 +40,17 @@ impl Platform for X11 {
 
         debug!("All set up, start listening");
 
-        std::iter::from_fn(|| {
-            debug!("Waiting for event...");
-
-            match self.conn.wait_for_event().unwrap() {
-                Event::XfixesSelectionNotify(event) => {
-                    debug!("Received SelectionNotify: {:?}", event);
-                    Some(OutEvent::change())
-                }
-                event => {
-                    debug!("Received event {:?}", event);
-                    None
-                }
+        std::iter::from_fn(|| match self.conn.wait_for_event().unwrap() {
+            Event::XfixesSelectionNotify(event) => {
+                debug!(
+                    "Received SelectionNotify: {:?} {:?}",
+                    event.timestamp, event.selection_timestamp
+                );
+                Some(OutEvent::change())
+            }
+            event => {
+                debug!("Received event {:?}", event);
+                None
             }
         })
     }

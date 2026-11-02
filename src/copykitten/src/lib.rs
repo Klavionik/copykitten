@@ -3,7 +3,7 @@ extern crate core;
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
 use chrono::{DateTime, Utc};
-use copykitten_watcher::{Event, EventKind, platform, watch};
+use copykitten_watcher::{Event, EventKind, Watcher, platform};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
 use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
@@ -24,18 +24,18 @@ static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(in
 static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
 
 #[pyclass]
-struct CopykittenEvent {
+struct ChangeEvent {
     timestamp: DateTime<Utc>,
 }
 
 #[pymethods]
-impl CopykittenEvent {
+impl ChangeEvent {
     fn __repr__(&self) -> String {
-        format!("CopykittenEvent(timestamp={})", self.timestamp.to_rfc3339())
+        format!("ChangeEvent(timestamp={})", self.timestamp.to_rfc3339())
     }
 }
 
-impl From<&Event> for CopykittenEvent {
+impl From<&Event> for ChangeEvent {
     fn from(value: &Event) -> Self {
         match value.kind {
             EventKind::Change => Self {
@@ -50,7 +50,7 @@ fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>), event: &Event) {
 
     debug!("Firing callback {}.", id);
 
-    match func.call1(py, (CopykittenEvent::from(event),)) {
+    match func.call1(py, (ChangeEvent::from(event),)) {
         Ok(_) => debug!("Callback complete."),
         Err(e) => debug!("Callback error: {:?}.", e),
     }
@@ -243,26 +243,25 @@ fn unlisten(id: Uuid) -> PyResult<bool> {
 }
 
 fn start_watcher() {
-    watch(
-        |e| {
-            debug!("Received event.");
+    let cb = |e: &Event| {
+        debug!("Received event.");
 
-            match CALLBACKS.get_or_init(initialize_callbacks).lock() {
-                Ok(guard) => Python::attach(|py| {
-                    if guard.is_empty() {
-                        debug!("No callbacks registered, skip event.");
-                        return;
-                    }
+        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+            Ok(guard) => Python::attach(|py| {
+                if guard.is_empty() {
+                    debug!("No callbacks registered, skip event.");
+                    return;
+                }
 
-                    guard
-                        .iter()
-                        .for_each(|callback| run_callback(py, callback, e));
-                }),
-                Err(_) => error!("Callbacks lock is poisoned."),
-            }
-        },
-        platform::X11::new(),
-    );
+                guard
+                    .iter()
+                    .for_each(|callback| run_callback(py, callback, e));
+            }),
+            Err(_) => error!("Callbacks lock is poisoned."),
+        }
+    };
+
+    Watcher::new(cb, platform::X11::new()).spawn();
 }
 
 #[pymodule]
@@ -288,7 +287,7 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
     module.add_function(wrap_pyfunction!(listen, module)?)?;
     module.add_function(wrap_pyfunction!(unlisten, module)?)?;
-    module.add_class::<CopykittenEvent>()?;
+    module.add_class::<ChangeEvent>()?;
 
     start_watcher();
 
