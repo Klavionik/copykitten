@@ -111,3 +111,14 @@ impl Debug for X11 {
         )
     }
 }
+
+// I guess it's not strictly neccessary to have Drop implemented
+// when the watcher lives until the Python process exits, where
+// it gets dropped anyway.
+// Still, let's have it.
+impl Drop for X11 {
+    fn drop(&mut self) {
+        self.conn.destroy_window(self.window_id).unwrap();
+        self.conn.flush().unwrap();
+    }
+}
