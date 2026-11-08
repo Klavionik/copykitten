@@ -34,6 +34,8 @@ pub struct Watcher<F, P> {
     callback: F,
 }
 
+// TODO: Potential option: ignore operations made by this process.
+// TODO: Potential option: deduplicate by the sequence ID.
 impl<F: FnMut(&Event), P: Platform> Watcher<F, P> {
     pub fn new(callback: F, platform: P) -> Self {
         Self { platform, callback }

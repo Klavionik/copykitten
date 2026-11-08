@@ -11,6 +11,8 @@ pub use x11::X11;
 
 #[cfg(windows)]
 pub mod windows;
+#[cfg(windows)]
+pub use windows::Windows;
 
 #[cfg(target_os = "macos")]
 pub mod macos;

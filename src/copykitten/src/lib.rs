@@ -257,11 +257,11 @@ fn start_watcher() {
                     .iter()
                     .for_each(|callback| run_callback(py, callback, e));
             }),
-            Err(_) => error!("Callbacks lock is poisoned."),
+            Err(_) => error!("Cas lock is poisoned."),
         }
     };
 
-    Watcher::new(cb, platform::X11::new()).spawn();
+    // Watcher::new(cb, platform::X11::new()).spawn();
 }
 
 #[pymodule]
