@@ -3,7 +3,8 @@ extern crate core;
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
 use chrono::{DateTime, Utc};
-use copykitten_watcher::{Event, EventKind, Watcher, platform};
+use copykitten_watcher::event::{Event, EventKind};
+use copykitten_watcher::{Platform, Watcher};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
 use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
@@ -261,7 +262,7 @@ fn start_watcher() {
         }
     };
 
-    // Watcher::new(cb, platform::X11::new()).spawn();
+    Watcher::new(cb, Platform::default()).spawn();
 }
 
 #[pymodule]

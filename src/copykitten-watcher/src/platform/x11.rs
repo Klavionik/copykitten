@@ -1,6 +1,7 @@
-use crate::{Event as OutEvent, Platform};
+use crate::{Event as OutEvent, platform::Listener};
 use log::debug;
 use std::fmt::{Debug, Formatter};
+use std::iter::FromFn;
 use x11rb::connection::Connection;
 use x11rb::protocol::xfixes::{ConnectionExt as _, SelectionEventMask};
 use x11rb::protocol::xproto::{Atom, ConnectionExt as _, CreateWindowAux, WindowClass};
@@ -14,8 +15,8 @@ pub struct X11 {
     window_id: u32,
 }
 
-impl Platform for X11 {
-    fn listen(&self) -> impl Iterator<Item = OutEvent> {
+impl Listener for X11 {
+    fn next_event(&mut self) -> Option<OutEvent> {
         debug!("Set up selection event listener");
 
         let clipboard = self.get_clipboard_atom();
@@ -40,7 +41,7 @@ impl Platform for X11 {
 
         debug!("All set up, start listening");
 
-        std::iter::from_fn(|| match self.conn.wait_for_event().unwrap() {
+        match self.conn.wait_for_event().unwrap() {
             Event::XfixesSelectionNotify(event) => {
                 debug!(
                     "Received SelectionNotify: {:?} {:?}",
@@ -52,7 +53,7 @@ impl Platform for X11 {
                 debug!("Received event {:?}", event);
                 None
             }
-        })
+        }
     }
 }
 
@@ -112,7 +113,7 @@ impl Debug for X11 {
     }
 }
 
-// I guess it's not strictly neccessary to have Drop implemented
+// I guess it's not strictly necessary to have Drop implemented
 // when the watcher lives until the Python process exits, where
 // it gets dropped anyway.
 // Still, let's have it.

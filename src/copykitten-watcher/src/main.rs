@@ -1,4 +1,4 @@
-use copykitten_watcher::{Watcher, platform::Windows};
+use copykitten_watcher::{Platform, Watcher};
 use flexi_logger::{Logger, WriteMode, opt_format};
 use log::debug;
 
@@ -10,7 +10,7 @@ fn main() {
         .start()
         .unwrap();
 
-    let _handle = Watcher::new(|e| debug!("{e:?}"), Windows::new()).run();
+    let handle = Watcher::new(|e| debug!("{e:?}"), Platform::default()).spawn();
 
-    // handle.join().unwrap();
+    handle.join().unwrap();
 }

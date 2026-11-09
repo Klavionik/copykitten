@@ -1,44 +1,21 @@
-pub mod platform;
+pub mod event;
+mod platform;
 
-use chrono::{DateTime, Utc};
+use event::Event;
 use log::debug;
-use std::fmt::Debug;
+pub use platform::Platform;
 use std::thread::{self, JoinHandle};
 
-pub trait Platform: Debug {
-    fn listen(&self) -> impl Iterator<Item = Event>;
-}
-
-#[derive(Debug, Clone)]
-pub struct Event {
-    pub timestamp: DateTime<Utc>,
-    pub kind: EventKind,
-}
-
-impl Event {
-    pub fn change() -> Self {
-        Self {
-            timestamp: Utc::now(),
-            kind: EventKind::Change,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum EventKind {
-    Change,
-}
-
-pub struct Watcher<F, P> {
-    platform: P,
+pub struct Watcher<F> {
     callback: F,
+    platform: Platform,
 }
 
 // TODO: Potential option: ignore operations made by this process.
 // TODO: Potential option: deduplicate by the sequence ID.
-impl<F: FnMut(&Event), P: Platform> Watcher<F, P> {
-    pub fn new(callback: F, platform: P) -> Self {
-        Self { platform, callback }
+impl<F: FnMut(&Event)> Watcher<F> {
+    pub fn new(callback: F, platform: Platform) -> Self {
+        Self { callback, platform }
     }
 
     pub fn run(&mut self) {
@@ -54,54 +31,10 @@ impl<F: FnMut(&Event), P: Platform> Watcher<F, P> {
     pub fn spawn(mut self) -> JoinHandle<()>
     where
         F: FnMut(&Event) + Send + 'static,
-        P: Platform + Send + 'static,
     {
         thread::Builder::new()
             .name("copykitten-watcher".into())
             .spawn(move || self.run())
             .expect("Failed to spawn clipboard watcher")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::cell::RefCell;
-
-    #[derive(Debug)]
-    struct FakePlatform {
-        events: RefCell<Vec<Event>>,
-    }
-
-    impl Platform for FakePlatform {
-        fn listen(&self) -> impl Iterator<Item = Event> {
-            std::iter::from_fn(move || self.events.borrow_mut().pop())
-        }
-    }
-
-    fn fake_platform(fake_events: &[Event]) -> FakePlatform {
-        FakePlatform {
-            events: RefCell::new(fake_events.to_vec()),
-        }
-    }
-
-    #[test]
-    fn invokes_callback_on_received_events() {
-        let first = Event::change();
-        let second = Event::change();
-
-        let mut expected_events = vec![second, first];
-        let mut inbox = vec![];
-        let platform = fake_platform(&expected_events);
-
-        let cb = |e: &Event| inbox.push(e.timestamp);
-
-        Watcher::new(cb, platform).run();
-
-        assert_eq!(inbox.len(), 2);
-
-        for ts in inbox {
-            assert_eq!(expected_events.pop().unwrap().timestamp, ts)
-        }
     }
 }
