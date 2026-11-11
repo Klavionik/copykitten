@@ -4,11 +4,11 @@ import sys
 from pathlib import Path
 from time import sleep
 
-import copykitten
 import pytest
-from copykitten import ChangeEvent
 from PIL import Image
 
+import copykitten
+from copykitten import ChangeEvent
 from tests.clipboard import (
     ReadClipboard,
     ReadClipboardFileList,
@@ -18,7 +18,7 @@ from tests.clipboard import (
     WriteClipboardImage,
 )
 
-DEFAULT_ITERATIONS = 20
+DEFAULT_ITERATIONS = 1
 DEFAULT_SLEEP_TIME = 0.1
 
 

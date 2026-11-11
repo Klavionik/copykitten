@@ -10,7 +10,10 @@ fn main() {
         .start()
         .unwrap();
 
-    let handle = Watcher::new(|e| debug!("{e:?}"), Platform::default()).spawn();
+    let platform = Platform::new().unwrap();
+    let watcher = Watcher::new(|event| debug!("{event:?}"), platform);
+
+    let handle = watcher.spawn().unwrap();
 
     handle.join().unwrap();
 }

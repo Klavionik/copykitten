@@ -4,7 +4,6 @@ extern crate core;
 use arboard::SetExtLinux;
 use chrono::{DateTime, Utc};
 use copykitten_watcher::event::{Event, EventKind};
-use copykitten_watcher::{Platform, Watcher};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
 use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
@@ -23,6 +22,8 @@ create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
 static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
 static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
+
+static WATCHER_RUNNING: OnceLock<bool> = OnceLock::new();
 
 #[pyclass]
 struct ChangeEvent {
@@ -218,6 +219,10 @@ fn clear() -> PyResult<()> {
 
 #[pyfunction]
 fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
+    if !WATCHER_RUNNING.get_or_init(start_watcher) {
+        return Err(raise_exc("Couldn't spawn the clipboard watcher."));
+    }
+
     let mut callbacks = CALLBACKS
         .get_or_init(initialize_callbacks)
         .lock()
@@ -227,6 +232,7 @@ fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
     callbacks.insert(id, callback);
 
     debug!("Added a new callback {}", id);
+
     Ok(id)
 }
 
@@ -243,7 +249,7 @@ fn unlisten(id: Uuid) -> PyResult<bool> {
     Ok(removed)
 }
 
-fn start_watcher() {
+fn start_watcher() -> bool {
     let cb = |e: &Event| {
         debug!("Received event.");
 
@@ -258,11 +264,11 @@ fn start_watcher() {
                     .iter()
                     .for_each(|callback| run_callback(py, callback, e));
             }),
-            Err(_) => error!("Cas lock is poisoned."),
+            Err(_) => error!("Callbacks lock is poisoned."),
         }
     };
 
-    Watcher::new(cb, Platform::default()).spawn();
+    copykitten_watcher::spawn(cb).is_ok()
 }
 
 #[pymodule]
@@ -289,8 +295,6 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(listen, module)?)?;
     module.add_function(wrap_pyfunction!(unlisten, module)?)?;
     module.add_class::<ChangeEvent>()?;
-
-    start_watcher();
 
     Ok(())
 }
