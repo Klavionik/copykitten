@@ -23,14 +23,44 @@ impl Windows {
         Self { hwnd: None }
     }
 
-    fn hwnd(&self) -> Option<HWND> {
-        self.hwnd.map(|v| HWND(v as _))
-    }
-}
+    pub fn setup(&mut self) -> Result<(), anyhow::Error> {
+        // Create a UTF-16 string with the name of the window class.
+        // Here we use the built-in system Static class. That way we
+        // don't have to register our own window class and
+        // define a window procedure, making things easier.
+        let class_name = w!("STATIC");
 
-impl Default for Windows {
-    fn default() -> Self {
-        Self::new()
+        let hwnd = unsafe {
+            // Create a hidden window that only listens to messages and get a handle to it.
+            let hwnd = CreateWindowExW(
+                Default::default(), // Skip the styles.
+                class_name,         // The window class name.
+                w!(""),             // No need for a window title.
+                Default::default(), // Skip the styles, again.
+                0,
+                0,
+                0,
+                0,                  // No need for position.
+                Some(HWND_MESSAGE), // Mark this window as message-only.
+                None,               // No menu.
+                None,               // No specific application.
+                None,               // No extra params.
+            )?;
+
+            // Subscribe our dummy window to the clipboard content changes.
+            AddClipboardFormatListener(hwnd)?;
+
+            hwnd
+        };
+
+        // Store the actual window handle.
+        self.hwnd = Some(hwnd.0 as _);
+
+        Ok(())
+    }
+
+    fn hwnd(&self) -> Option<HWND> {
+        self.hwnd.map(|value| HWND(value as _))
     }
 }
 
@@ -47,36 +77,6 @@ impl Drop for Message {
 
 impl Listener for Windows {
     fn next_event(&mut self) -> Option<Event> {
-        // Create a UTF-16 string with the name of the window class.
-        // Here we use the built-in system Static class. That way we
-        // don't have to register our own window class and
-        // define a window procedure, making things easier.
-        let class_name = w!("STATIC");
-
-        unsafe {
-            // Create a hidden window that only listens to messages and get a handle to it.
-            let hwnd = CreateWindowExW(
-                Default::default(), // Skip the styles.
-                class_name,         // The window class name.
-                w!(""),             // No need for a window title.
-                Default::default(), // Skip the styles, again.
-                0,
-                0,
-                0,
-                0,                  // No need for position.
-                Some(HWND_MESSAGE), // Mark this window as message-only.
-                None,               // No menu.
-                None,               // No specific application.
-                None,               // No extra params.
-            )
-            .unwrap();
-
-            AddClipboardFormatListener(hwnd).unwrap();
-
-            // Store the actual window handle.
-            self.hwnd = Some(hwnd.0 as isize);
-        };
-
         // Allocate memory for the incoming message.
         let mut msg = MSG::default();
 

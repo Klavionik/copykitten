@@ -20,16 +20,16 @@ pub enum Platform {
 
 impl Platform {
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn new() -> Self {
-        Self::X11(x11::X11::new())
+    pub fn new() -> Result<Self, anyhow::Error> {
+        Ok(Self::X11(x11::X11::new()))
     }
     #[cfg(windows)]
-    pub fn new() -> Self {
-        Self::Windows(windows::Windows::new())
+    pub fn new() -> Result<Self, anyhow::Error> {
+        Ok(Self::Windows(windows::Windows::new()))
     }
     #[cfg(target_os = "macos")]
-    pub fn new() -> Self {
-        Self::MacOS(macos::MacOS::new())
+    pub fn new() -> Result<Self, anyhow::Error> {
+        Ok(Self::MacOS(macos::MacOS::new()))
     }
 
     pub fn next_event(&mut self) -> Option<Event> {
@@ -46,12 +46,16 @@ impl Platform {
     pub fn listen(&mut self) -> impl Iterator<Item = Event> + '_ {
         std::iter::from_fn(move || self.next_event())
     }
-}
 
-#[cfg(windows)]
-impl Default for Platform {
-    fn default() -> Self {
-        Self::new()
+    pub fn setup(&mut self) -> Result<(), anyhow::Error> {
+        match self {
+            #[cfg(all(unix, not(target_os = "macos")))]
+            Self::X11(p) => Ok(()),
+            #[cfg(windows)]
+            Self::Windows(p) => p.setup(),
+            #[cfg(target_os = "macos")]
+            Self::MacOs(p) => Ok(()),
+        }
     }
 }
 
