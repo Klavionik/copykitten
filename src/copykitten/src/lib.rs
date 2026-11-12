@@ -2,22 +2,69 @@ extern crate core;
 
 #[cfg(target_os = "linux")]
 use arboard::SetExtLinux;
+use chrono::{DateTime, Utc};
+use copykitten_watcher::event::{Event, EventKind};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
+use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
+use log::{debug, error};
 use pyo3::create_exception;
 use pyo3::prelude::*;
+use pyo3::types::PyFunction;
 use std::borrow::Cow;
+use std::collections::HashMap;
 #[cfg(target_os = "linux")]
 use std::fs::File;
-use std::sync::{LazyLock, Mutex, MutexGuard};
+use std::sync::{LazyLock, Mutex, MutexGuard, OnceLock};
+use uuid::Uuid;
 
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
 static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
+static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
+
+static WATCHER_RUNNING: OnceLock<bool> = OnceLock::new();
+
+#[pyclass]
+struct ChangeEvent {
+    timestamp: DateTime<Utc>,
+}
+
+#[pymethods]
+impl ChangeEvent {
+    fn __repr__(&self) -> String {
+        format!("ChangeEvent(timestamp={})", self.timestamp.to_rfc3339())
+    }
+}
+
+impl From<&Event> for ChangeEvent {
+    fn from(value: &Event) -> Self {
+        match value.kind {
+            EventKind::Change => Self {
+                timestamp: value.timestamp,
+            },
+        }
+    }
+}
+
+fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>), event: &Event) {
+    let (id, func) = callback;
+
+    debug!("Firing callback {}.", id);
+
+    match func.call1(py, (ChangeEvent::from(event),)) {
+        Ok(_) => debug!("Callback complete."),
+        Err(e) => debug!("Callback error: {:?}.", e),
+    }
+}
 
 fn initialize_clipboard() -> Option<Mutex<arboard::Clipboard>> {
     let maybe_clipboard = arboard::Clipboard::new().ok();
     maybe_clipboard.map(Mutex::new)
+}
+
+fn initialize_callbacks() -> Mutex<HashMap<Uuid, Py<PyFunction>>> {
+    Mutex::new(HashMap::new())
 }
 
 fn raise_exc(text: &'static str) -> PyErr {
@@ -170,8 +217,70 @@ fn clear() -> PyResult<()> {
     cb.clear().map_err(to_exc)
 }
 
+#[pyfunction]
+fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
+    if !WATCHER_RUNNING.get_or_init(start_watcher) {
+        return Err(raise_exc("Couldn't spawn the clipboard watcher."));
+    }
+
+    let mut callbacks = CALLBACKS
+        .get_or_init(initialize_callbacks)
+        .lock()
+        .map_err(|_| raise_exc("Cannot add a new callback, lock is poisoned."))?;
+
+    let id = Uuid::new_v4();
+    callbacks.insert(id, callback);
+
+    debug!("Added a new callback {}", id);
+
+    Ok(id)
+}
+
+#[pyfunction]
+fn unlisten(id: Uuid) -> PyResult<bool> {
+    let mut callbacks = CALLBACKS
+        .get_or_init(initialize_callbacks)
+        .lock()
+        .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
+
+    let removed = callbacks.remove(&id).is_some();
+    debug!("Removed callback {}, success = {}", id, removed);
+
+    Ok(removed)
+}
+
+fn start_watcher() -> bool {
+    let cb = |e: &Event| {
+        debug!("Received event.");
+
+        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+            Ok(guard) => Python::attach(|py| {
+                if guard.is_empty() {
+                    debug!("No callbacks registered, skip event.");
+                    return;
+                }
+
+                guard
+                    .iter()
+                    .for_each(|callback| run_callback(py, callback, e));
+            }),
+            Err(_) => error!("Callbacks lock is poisoned."),
+        }
+    };
+
+    copykitten_watcher::spawn(cb).is_ok()
+}
+
 #[pymodule]
 fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    let _logger = Logger::try_with_str("copykitten=debug")
+        .unwrap()
+        .log_to_file(FileSpec::default())
+        .format(opt_format)
+        .write_mode(WriteMode::BufferAndFlush)
+        .start()
+        .unwrap();
+
     module.add("CopykittenError", module.py().get_type::<CopykittenError>())?;
     module.add_function(wrap_pyfunction!(copy, module)?)?;
     module.add_function(wrap_pyfunction!(copy_wait, module)?)?;
@@ -183,5 +292,9 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(copy_file_list_wait, module)?)?;
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
     module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
+    module.add_function(wrap_pyfunction!(listen, module)?)?;
+    module.add_function(wrap_pyfunction!(unlisten, module)?)?;
+    module.add_class::<ChangeEvent>()?;
+
     Ok(())
 }
