@@ -82,7 +82,18 @@ fn get_clipboard() -> Result<MutexGuard<'static, arboard::Clipboard>, PyErr> {
 
     mutex
         .lock()
-        .map_err(|_| raise_exc("Cannot get lock on the clipboard, the lock is poisoned."))
+        .map_err(|_| raise_exc("Cannot acquire a lock on the clipboard, the lock is poisoned."))
+}
+
+fn get_callbacks() -> Result<MutexGuard<'static, IndexMap<Uuid, Py<PyFunction>>>, PyErr> {
+    CALLBACKS
+        .get_or_init(initialize_callbacks)
+        .lock()
+        .map_err(|_| raise_exc("Cannot acquire a lock on callbacks, the lock is poisoned."))
+}
+
+fn is_watcher_running() -> bool {
+    *WATCHER_RUNNING.get_or_init(start_watcher)
 }
 
 #[cfg(target_os = "linux")]
@@ -219,14 +230,11 @@ fn clear() -> PyResult<()> {
 
 #[pyfunction]
 fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
-    if !WATCHER_RUNNING.get_or_init(start_watcher) {
+    if !is_watcher_running() {
         return Err(raise_exc("Couldn't spawn the clipboard watcher."));
     }
 
-    let mut callbacks = CALLBACKS
-        .get_or_init(initialize_callbacks)
-        .lock()
-        .map_err(|_| raise_exc("Cannot add a new callback, lock is poisoned."))?;
+    let mut callbacks = get_callbacks()?;
 
     let id = Uuid::new_v4();
     callbacks.insert(id, callback);
@@ -239,11 +247,7 @@ fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
 #[pyfunction]
 fn unlisten(callback_id: Uuid) -> PyResult<bool> {
     let removed = {
-        let mut callbacks = CALLBACKS
-            .get_or_init(initialize_callbacks)
-            .lock()
-            .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
-
+        let mut callbacks = get_callbacks()?;
         callbacks.shift_remove(&callback_id)
     };
 
@@ -261,7 +265,7 @@ fn start_watcher() -> bool {
         debug!("Received event.");
 
         Python::attach(|py| {
-            let callbacks = match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+            let callbacks = match get_callbacks() {
                 Ok(guard) => {
                     if guard.is_empty() {
                         debug!("No callbacks registered, skip event.");
