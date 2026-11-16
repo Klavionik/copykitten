@@ -47,7 +47,7 @@ impl From<&Event> for ChangeEvent {
     }
 }
 
-fn run_callback(py: Python, callback: (&Uuid, &Py<PyFunction>), event: &Event) {
+fn run_callback(py: Python, callback: &(Uuid, Py<PyFunction>), event: &Event) {
     let (id, func) = callback;
 
     debug!("Firing callback {}.", id);
@@ -257,19 +257,27 @@ fn start_watcher() -> bool {
     let cb = |e: &Event| {
         debug!("Received event.");
 
-        match CALLBACKS.get_or_init(initialize_callbacks).lock() {
-            Ok(guard) => Python::attach(|py| {
-                if guard.is_empty() {
-                    debug!("No callbacks registered, skip event.");
+        Python::attach(|py| {
+            let callbacks = match CALLBACKS.get_or_init(initialize_callbacks).lock() {
+                Ok(guard) => {
+                    if guard.is_empty() {
+                        debug!("No callbacks registered, skip event.");
+                        return;
+                    }
+
+                    guard
+                        .iter()
+                        .map(|(id, cb)| (*id, cb.clone_ref(py)))
+                        .collect::<Vec<_>>()
+                }
+                Err(_) => {
+                    error!("Callbacks lock is poisoned.");
                     return;
                 }
+            };
 
-                guard
-                    .iter()
-                    .for_each(|callback| run_callback(py, callback, e));
-            }),
-            Err(_) => error!("Callbacks lock is poisoned."),
-        }
+            callbacks.iter().for_each(|cb| run_callback(py, cb, e));
+        })
     };
 
     copykitten_watcher::spawn(cb).is_ok()
