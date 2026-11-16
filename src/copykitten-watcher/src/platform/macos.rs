@@ -30,10 +30,10 @@ impl Listener for MacOS {
             debug!("Fetched change count {change_count}");
 
             if let Some(last_change_count) = self.last_change_count {
-                self.last_change_count = Some(change_count);
-                debug!("Updated change count from {last_change_count} to {change_count}");
+                if change_count != last_change_count {
+                    self.last_change_count = Some(change_count);
 
-                if change_count > last_change_count {
+                    debug!("Updated change count from {last_change_count} to {change_count}");
                     debug!("There was a change, emit an event");
                     return Some(Event::change());
                 }
