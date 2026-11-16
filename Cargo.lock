@@ -49,12 +49,8 @@ dependencies = [
  "parking_lot",
  "percent-encoding",
  "windows-sys",
-<<<<<<< HEAD
  "wl-clipboard-rs",
- "x11rb",
-=======
  "x11rb 0.13.2",
->>>>>>> 578c177 ([skip actions] Split the Python module and the watcher into separate packages)
 ]
 
 [[package]]
@@ -124,23 +120,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "clipboard-master"
-version = "4.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afb54a4a6276fa0ba81521125872fe232806ef956e1962badd7ef2c1764f871d"
-dependencies = [
- "objc2",
- "objc2-app-kit",
- "windows-win",
- "wl-clipboard-rs",
- "x11-clipboard",
- "x11rb",
-]
-
-[[package]]
-=======
->>>>>>> 578c177 ([skip actions] Split the Python module and the watcher into separate packages)
 name = "clipboard-win"
 version = "5.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -158,6 +137,7 @@ dependencies = [
  "copykitten-watcher",
  "daemonize",
  "flexi_logger",
+ "indexmap",
  "log",
  "pyo3",
  "uuid",
@@ -824,11 +804,7 @@ dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.119",
-=======
- "syn 3.0.9",
->>>>>>> 578c177 ([skip actions] Split the Python module and the watcher into separate packages)
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -840,11 +816,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.119",
-=======
- "syn 3.0.9",
->>>>>>> 578c177 ([skip actions] Split the Python module and the watcher into separate packages)
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -1285,35 +1257,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "windows-win"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58e23e33622b3b52f948049acbec9bcc34bf6e26d74176b88941f213c75cf2dc"
-dependencies = [
- "error-code",
-]
-
-[[package]]
-name = "wl-clipboard-rs"
-version = "0.9.5"
-=======
-name = "windows-targets"
-version = "0.52.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b724f72796e036ab90c1021d4780d4d3d648aca59e491e6b98e725b84e99973"
-dependencies = [
- "windows_aarch64_gnullvm",
- "windows_aarch64_msvc",
- "windows_i686_gnu",
- "windows_i686_gnullvm",
- "windows_i686_msvc",
- "windows_x86_64_gnu",
- "windows_x86_64_gnullvm",
- "windows_x86_64_msvc",
-]
-
-[[package]]
 name = "windows-threading"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1323,9 +1266,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "windows_aarch64_gnullvm"
-version = "0.52.6"
->>>>>>> 578c177 ([skip actions] Split the Python module and the watcher into separate packages)
+name = "wl-clipboard-rs"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "959c7ac3b8afde864f7a7448ac16f29b2b83350b7eccbf77fb781c3999aa6848"
 dependencies = [
@@ -1370,19 +1312,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea6fc2961e4ef194dcbfe56bb845534d0dc8098940c7e5c012a258bfec6701bd"
 
 [[package]]
-<<<<<<< HEAD
-name = "zerocopy"
-version = "0.8.64"
-=======
 name = "x11rb-protocol"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acf4d1bc32aa46eec18caa634ec3cf4c05bfa151f12b93b510b15190f69a1ca8"
 
 [[package]]
-name = "zune-core"
-version = "0.4.12"
->>>>>>> 578c177 ([skip actions] Split the Python module and the watcher into separate packages)
+name = "zerocopy"
+version = "0.8.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed43f3060383c64b000f3c630550aebdfa9d3b76d48de32390483dd2cc7e0865"
 dependencies = [

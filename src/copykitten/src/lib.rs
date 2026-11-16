@@ -7,12 +7,12 @@ use copykitten_watcher::event::{Event, EventKind};
 #[cfg(target_os = "linux")]
 use daemonize::{Daemonize, Outcome};
 use flexi_logger::{FileSpec, Logger, WriteMode, opt_format};
+use indexmap::IndexMap;
 use log::{debug, error};
 use pyo3::create_exception;
 use pyo3::prelude::*;
 use pyo3::types::PyFunction;
 use std::borrow::Cow;
-use std::collections::HashMap;
 #[cfg(target_os = "linux")]
 use std::fs::File;
 use std::sync::{LazyLock, Mutex, MutexGuard, OnceLock};
@@ -21,7 +21,7 @@ use uuid::Uuid;
 create_exception!(copykitten, CopykittenError, pyo3::exceptions::PyException);
 
 static CLIPBOARD: LazyLock<Option<Mutex<arboard::Clipboard>>> = LazyLock::new(initialize_clipboard);
-static CALLBACKS: OnceLock<Mutex<HashMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
+static CALLBACKS: OnceLock<Mutex<IndexMap<Uuid, Py<PyFunction>>>> = OnceLock::new();
 
 static WATCHER_RUNNING: OnceLock<bool> = OnceLock::new();
 
@@ -63,8 +63,8 @@ fn initialize_clipboard() -> Option<Mutex<arboard::Clipboard>> {
     maybe_clipboard.map(Mutex::new)
 }
 
-fn initialize_callbacks() -> Mutex<HashMap<Uuid, Py<PyFunction>>> {
-    Mutex::new(HashMap::new())
+fn initialize_callbacks() -> Mutex<IndexMap<Uuid, Py<PyFunction>>> {
+    Mutex::new(IndexMap::new())
 }
 
 fn raise_exc(text: &'static str) -> PyErr {
@@ -237,16 +237,20 @@ fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
 }
 
 #[pyfunction]
-fn unlisten(id: Uuid) -> PyResult<bool> {
+fn unlisten(callback_id: Uuid) -> PyResult<bool> {
     let mut callbacks = CALLBACKS
         .get_or_init(initialize_callbacks)
         .lock()
         .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
 
-    let removed = callbacks.remove(&id).is_some();
-    debug!("Removed callback {}, success = {}", id, removed);
+    let removed = callbacks.shift_remove(&callback_id);
+    debug!(
+        "Removed callback {}, success = {}",
+        callback_id,
+        removed.is_some()
+    );
 
-    Ok(removed)
+    Ok(removed.is_some())
 }
 
 fn start_watcher() -> bool {
