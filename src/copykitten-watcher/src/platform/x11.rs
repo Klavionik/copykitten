@@ -1,7 +1,6 @@
 use crate::{Event as OutEvent, platform::Listener};
 use log::debug;
 use std::fmt::{Debug, Formatter};
-use std::iter::FromFn;
 use x11rb::connection::Connection;
 use x11rb::protocol::xfixes::{ConnectionExt as _, SelectionEventMask};
 use x11rb::protocol::xproto::{Atom, ConnectionExt as _, CreateWindowAux, WindowClass};
