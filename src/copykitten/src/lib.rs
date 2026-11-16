@@ -238,12 +238,15 @@ fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
 
 #[pyfunction]
 fn unlisten(callback_id: Uuid) -> PyResult<bool> {
-    let mut callbacks = CALLBACKS
-        .get_or_init(initialize_callbacks)
-        .lock()
-        .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
+    let removed = {
+        let mut callbacks = CALLBACKS
+            .get_or_init(initialize_callbacks)
+            .lock()
+            .map_err(|_| raise_exc("Cannot remove a callback, lock is poisoned."))?;
 
-    let removed = callbacks.shift_remove(&callback_id);
+        callbacks.shift_remove(&callback_id)
+    };
+
     debug!(
         "Removed callback {}, success = {}",
         callback_id,
