@@ -14,3 +14,7 @@ windows = { version =  "0.62.2" , features = ["Win32_Foundation", "Win32_System_
 
 [target.'cfg(all(unix, not(any(target_os="macos", target_os="android", target_os="emscripten"))))'.dependencies]
 x11rb = { version = "0.14.0", features = ["xfixes"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = { version = "0.3.2", features = ["NSPasteboard"] }
+objc2 = "0.6.5"

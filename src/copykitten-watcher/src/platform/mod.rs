@@ -15,7 +15,7 @@ pub enum Platform {
     #[cfg(all(unix, not(target_os = "macos")))]
     X11(x11::X11),
     #[cfg(target_os = "macos")]
-    MacOS,
+    MacOS(macos::MacOS),
 }
 
 impl Platform {
@@ -32,6 +32,7 @@ impl Platform {
         Ok(Self::MacOS(macos::MacOS::new()))
     }
 
+    // TODO: Seems more like a private method.
     pub fn next_event(&mut self) -> Option<Event> {
         match self {
             #[cfg(all(unix, not(target_os = "macos")))]
@@ -39,7 +40,7 @@ impl Platform {
             #[cfg(windows)]
             Self::Windows(p) => p.next_event(),
             #[cfg(target_os = "macos")]
-            Self::MacOs(p) => p.next_event(),
+            Self::MacOS(p) => p.next_event(),
         }
     }
 
@@ -50,11 +51,11 @@ impl Platform {
     pub fn setup(&mut self) -> Result<(), anyhow::Error> {
         match self {
             #[cfg(all(unix, not(target_os = "macos")))]
-            Self::X11(p) => Ok(()),
+            Self::X11(_) => Ok(()),
             #[cfg(windows)]
             Self::Windows(p) => p.setup(),
             #[cfg(target_os = "macos")]
-            Self::MacOs(p) => Ok(()),
+            Self::MacOS(_) => Ok(()),
         }
     }
 }
