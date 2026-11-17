@@ -51,7 +51,7 @@ impl Platform {
     pub fn setup(&mut self) -> Result<(), anyhow::Error> {
         match self {
             #[cfg(all(unix, not(target_os = "macos")))]
-            Self::X11(_) => Ok(()),
+            Self::X11(p) => p.setup(),
             #[cfg(windows)]
             Self::Windows(p) => p.setup(),
             #[cfg(target_os = "macos")]

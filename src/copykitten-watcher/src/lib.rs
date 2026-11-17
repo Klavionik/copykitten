@@ -21,9 +21,9 @@ impl Watcher {
             platform,
         }
     }
-    pub fn run(&mut self) {
-        // TODO: Handle error path.
-        self.platform.setup().unwrap();
+
+    pub fn run(&mut self) -> Result<(), anyhow::Error> {
+        self.platform.setup()?;
         debug!("Run clipboard watcher using {:?}", self.platform);
 
         for event in self.platform.listen() {
@@ -31,18 +31,20 @@ impl Watcher {
         }
 
         debug!("Stop clipboard watcher");
+
+        Ok(())
     }
 
-    pub fn spawn(mut self) -> Result<JoinHandle<()>, anyhow::Error> {
+    pub fn spawn(mut self) -> Result<JoinHandle<Result<(), anyhow::Error>>, anyhow::Error> {
         Ok(thread::Builder::new()
             .name("copykitten-watcher".to_string())
-            .spawn(move || {
-                self.run();
-            })?)
+            .spawn(move || self.run())?)
     }
 }
 
-pub fn spawn(cb: impl FnMut(&Event) + Send + 'static) -> Result<JoinHandle<()>, anyhow::Error> {
+pub fn spawn(
+    cb: impl FnMut(&Event) + Send + 'static,
+) -> Result<JoinHandle<Result<(), anyhow::Error>>, anyhow::Error> {
     let platform = Platform::new()?;
     let watcher = Watcher::new(cb, platform);
 

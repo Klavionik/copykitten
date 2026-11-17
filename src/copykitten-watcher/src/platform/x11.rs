@@ -1,3 +1,11 @@
+/// X11 backend for copykitten-watcher.
+///
+/// On construction, connects to the X Server and sets up a dummy GUI window.
+/// On ``setup``, subscribes this window to the clipboard change notifications.
+/// On ``next_event`` blocks, waiting for a notification.
+///
+/// **Note**: out of the three available X11 selections (clipboard, primary, secondary)
+/// it only listens to the clipboard selection, which is your Ctrl+C.
 use crate::{Event as OutEvent, platform::Listener};
 use log::debug;
 use std::fmt::{Debug, Formatter};
@@ -16,30 +24,6 @@ pub struct X11 {
 
 impl Listener for X11 {
     fn next_event(&mut self) -> Option<OutEvent> {
-        debug!("Set up selection event listener");
-
-        let clipboard = self.get_clipboard_atom();
-
-        self.conn
-            .xfixes_query_version(5, 0)
-            .unwrap()
-            .reply()
-            .unwrap();
-
-        xfixes::select_selection_input(
-            &self.conn,
-            self.window_id,
-            clipboard,
-            SelectionEventMask::SET_SELECTION_OWNER
-                | SelectionEventMask::SELECTION_WINDOW_DESTROY
-                | SelectionEventMask::SELECTION_CLIENT_CLOSE,
-        )
-        .unwrap();
-
-        self.conn.flush().unwrap();
-
-        debug!("All set up, start listening");
-
         match self.conn.wait_for_event().unwrap() {
             Event::XfixesSelectionNotify(event) => {
                 debug!(
@@ -84,6 +68,29 @@ impl X11 {
             window_id: win_id,
             conn,
         }
+    }
+
+    pub fn setup(&mut self) -> Result<(), anyhow::Error> {
+        debug!("Set up the clipboard selection listener");
+
+        let clipboard = self.get_clipboard_atom();
+
+        self.conn.xfixes_query_version(5, 0)?.reply()?;
+
+        xfixes::select_selection_input(
+            &self.conn,
+            self.window_id,
+            clipboard,
+            SelectionEventMask::SET_SELECTION_OWNER
+                | SelectionEventMask::SELECTION_WINDOW_DESTROY
+                | SelectionEventMask::SELECTION_CLIENT_CLOSE,
+        )?;
+
+        self.conn.flush()?;
+
+        debug!("Listener setup complete.");
+
+        Ok(())
     }
 
     fn get_clipboard_atom(&self) -> Atom {

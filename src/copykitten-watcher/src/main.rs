@@ -15,5 +15,5 @@ fn main() {
 
     let handle = watcher.spawn().unwrap();
 
-    handle.join().unwrap();
+    handle.join().unwrap().unwrap();
 }
