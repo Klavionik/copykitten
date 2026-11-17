@@ -4,9 +4,8 @@ import os
 import pathlib
 from collections.abc import Callable
 from typing import List, Tuple, Union
-from uuid import UUID
 
-from ._copykitten import ChangeEvent, CopykittenError
+from ._copykitten import ChangeEvent, CopykittenError, ListenHandle
 from ._copykitten import clear as _clear
 from ._copykitten import copy as _copy
 from ._copykitten import copy_file_list as _copy_file_list
@@ -18,7 +17,6 @@ from ._copykitten import listen as _listen
 from ._copykitten import paste as _paste
 from ._copykitten import paste_file_list as _paste_file_list
 from ._copykitten import paste_image as _paste_image
-from ._copykitten import unlisten as _unlisten
 
 __all__ = [
     "copy",
@@ -133,9 +131,5 @@ def paste_paths() -> List[pathlib.Path]:
     return _paste_file_list()
 
 
-def listen(callback: Callable[[ChangeEvent], None]) -> UUID:
+def listen(callback: Callable[[ChangeEvent], None]) -> ListenHandle:
     return _listen(callback)
-
-
-def unlisten(callback_id: UUID) -> bool:
-    return _unlisten(callback_id)

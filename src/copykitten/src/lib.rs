@@ -37,6 +37,41 @@ impl ChangeEvent {
     }
 }
 
+fn remove_callback(callback_id: Uuid) -> Option<Py<PyFunction>> {
+    let removed = match get_callbacks() {
+        Ok(mut callbacks) => callbacks.shift_remove(&callback_id),
+        Err(_) => None,
+    };
+
+    debug!(
+        "Removed callback {}, success = {}",
+        callback_id,
+        removed.is_some()
+    );
+
+    removed
+}
+
+#[pyclass]
+struct ListenHandle {
+    callback_id: Option<Uuid>,
+}
+
+#[pymethods]
+impl ListenHandle {
+    #[getter]
+    fn is_active(&self) -> bool {
+        self.callback_id.is_some()
+    }
+
+    fn cancel(&mut self) -> bool {
+        match self.callback_id.take() {
+            Some(callback_id) => remove_callback(callback_id).is_some(),
+            None => false,
+        }
+    }
+}
+
 impl From<&Event> for ChangeEvent {
     fn from(value: &Event) -> Self {
         match value.kind {
@@ -229,7 +264,7 @@ fn clear() -> PyResult<()> {
 }
 
 #[pyfunction]
-fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
+fn listen(callback: Py<PyFunction>) -> PyResult<ListenHandle> {
     if !is_watcher_running() {
         return Err(raise_exc("Couldn't spawn the clipboard watcher."));
     }
@@ -241,23 +276,9 @@ fn listen(callback: Py<PyFunction>) -> PyResult<Uuid> {
 
     debug!("Added a new callback {}", id);
 
-    Ok(id)
-}
-
-#[pyfunction]
-fn unlisten(callback_id: Uuid) -> PyResult<bool> {
-    let removed = {
-        let mut callbacks = get_callbacks()?;
-        callbacks.shift_remove(&callback_id)
-    };
-
-    debug!(
-        "Removed callback {}, success = {}",
-        callback_id,
-        removed.is_some()
-    );
-
-    Ok(removed.is_some())
+    Ok(ListenHandle {
+        callback_id: Some(id),
+    })
 }
 
 fn start_watcher() -> bool {
@@ -312,7 +333,7 @@ fn _copykitten(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(paste_image, module)?)?;
     module.add_function(wrap_pyfunction!(paste_file_list, module)?)?;
     module.add_function(wrap_pyfunction!(listen, module)?)?;
-    module.add_function(wrap_pyfunction!(unlisten, module)?)?;
+    module.add_class::<ListenHandle>()?;
     module.add_class::<ChangeEvent>()?;
 
     Ok(())

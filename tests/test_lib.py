@@ -288,7 +288,7 @@ def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
     # sends three events per one copy operation. ¯\_(ツ)_/¯
     expected_len = 6 if sys.platform == "win32" else 2
 
-    callback_id = copykitten.listen(cb)
+    handle = copykitten.listen(cb)
     sleep(0.3)
 
     write_clipboard("text")
@@ -297,7 +297,7 @@ def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
     write_clipboard("'text 2'")
     sleep(0.3)
 
-    removed = copykitten.unlisten(callback_id)
+    cancelled = handle.cancel()
     sleep(0.3)
 
     write_clipboard("text3")
@@ -305,4 +305,4 @@ def test_clipboard_listen_calls_callback(write_clipboard: WriteClipboard):
 
     assert not any(isinstance(item, Exception) for item in box)
     assert len(box) == expected_len
-    assert removed
+    assert cancelled
