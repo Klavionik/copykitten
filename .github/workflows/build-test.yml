@@ -107,20 +107,19 @@ jobs:
           # Create a directory with correct permissions for sway to expose its socket.
           mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
 
-          # Launch sway with an empty config and redirect its output into
-          # sway.log in case of debug.
-          sway --config /dev/null > sway.log 2>&1 &
+          # Launch sway with an empty config.
+          sway --config /dev/null &
 
           # Start Xwayland and probe it for readiness for 10 secs.
           # When ready, set env var `ready` and break from the loop.
           for _ in $(seq 100); do
-            xdpyinfo -display "$DISPLAY" > /dev/null 2>&1 && ready=1 && break
+            xdpyinfo -display "$DISPLAY" && ready=1 && break
             sleep 0.1
           done
 
-          # If unable to start XWayland, fail fast and print out the sway log.
+          # If unable to start XWayland, fail fast.
           if [ -z "${ready:-}" ]; then
-            echo "::error::sway/Xwayland failed to start"; cat sway.log; exit 1
+            echo "::error::sway/Xwayland failed to start"; exit 1
           fi
       - name: Setup venv
         run: python -m venv .venv
