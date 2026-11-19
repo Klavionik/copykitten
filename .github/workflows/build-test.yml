@@ -34,7 +34,7 @@ env:
 
 jobs:
   linux:
-    name: Build & test on Linux
+    name: Build & test on Linux (X11)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -79,6 +79,62 @@ jobs:
           name: wheels-${{ runner.os }}-${{ matrix.target }}
           path: dist
 
+  xwayland:
+    name: Build & test on Linux (XWayland)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        py: ${{ inputs.release && fromJSON('["3.10"]') || fromJSON('["3.10", "3.14"]') }}
+    env:
+      XDG_RUNTIME_DIR: /tmp/xdg
+      # Don't export WAYLAND_DISPLAY to avoid activating wlr-data-control specific
+      # backend.
+      DISPLAY: :0
+      WLR_BACKENDS: headless
+      WLR_RENDERER: pixman
+      WLR_LIBINPUT_NO_DEVICES: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sway xwayland xclip x11-utils
+      - name: Run headless compositor (sway) with XWayland
+        run: |
+          # Create a directory with correct permissions for sway to expose its socket.
+          mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
+
+          # Launch sway with an empty config, redirect logs to a file.
+          sway --config /dev/null > sway.log 2>&1 &
+
+          # Start Xwayland and probe it for readiness for 10 secs.
+          # When ready, set env var `ready` and exit the loop.
+          for _ in $(seq 100); do
+            xdpyinfo -display "$DISPLAY" > /dev/null 2>&1 && ready=1 && echo "::notice::XWayland is running" && break
+            sleep 0.1
+          done
+
+          # If unable to start XWayland, fail fast.
+          if [ -z "${ready:-}" ]; then
+            echo "::error::sway/Xwayland failed to start"; cat sway.log; exit 1
+          fi
+      - name: Setup venv
+        run: python -m venv .venv
+      - name: Build extension module
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x64
+          args: --profile ${{ env.build_profile }} --out dist
+          manylinux: auto
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          pip install dist/*
+          pip install -r requirements-dev.txt
+          pytest -v
 
   windows:
     name: Build & test on Windows
