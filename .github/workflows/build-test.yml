@@ -159,7 +159,7 @@ jobs:
       - name: Install test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y sway wl-clipboard
+          sudo apt-get install -y sway xwayland wl-clipboard
       - name: Run headless Wayland compositor
         run: |
           # Create a directory with correct permissions for sway to expose its socket.
