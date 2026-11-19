@@ -1,4 +1,5 @@
 import io
+import os
 import subprocess
 import sys
 import tempfile
@@ -28,7 +29,13 @@ class Resolver(Generic[T]):
     def __get__(self, _, __) -> T:
         variables = globals()
         platform = self.platform_mapping[sys.platform]
+
         function_name = f"{self.action}_{platform}"
+
+        is_wayland = os.getenv("WAYLAND_DISPLAY", default=False)
+
+        if platform == "linux" and is_wayland:
+            function_name = f"{function_name}_wayland"
 
         try:
             return cast(T, variables[function_name])
@@ -182,22 +189,6 @@ def write_file_list_win(file_list: List[str]) -> None:
     subprocess.run(("powershell.exe", "-NoProfile", "-Command", script), check=True)
 
 
-def read_file_list_linux() -> List[str]:
-    result = subprocess.check_output(
-        ("xclip", "-sel", "clipboard", "-o", "-target", "text/uri-list")
-    )
-    return [url2pathname(urlparse(line).path) for line in result.decode().splitlines()]
-
-
-def write_file_list_linux(file_list: List[str]) -> None:
-    uri_list = "\n".join(Path(p).as_uri() for p in file_list)
-    subprocess.run(
-        ("xclip", "-sel", "clipboard", "-i", "-target", "text/uri-list"),
-        input=uri_list.encode(),
-        check=True,
-    )
-
-
 def read_linux() -> str:
     return subprocess.check_output(("xclip", "-sel", "clipboard", "-o")).decode()
 
@@ -218,5 +209,59 @@ def write_image_linux(img: Image.Image) -> None:
     subprocess.run(
         ("xclip", "-sel", "clipboard", "-i", "-target", "image/png"),
         input=buffer.getvalue(),
+        check=True,
+    )
+
+
+def read_file_list_linux() -> List[str]:
+    result = subprocess.check_output(
+        ("xclip", "-sel", "clipboard", "-o", "-target", "text/uri-list")
+    )
+    return [url2pathname(urlparse(line).path) for line in result.decode().splitlines()]
+
+
+def write_file_list_linux(file_list: List[str]) -> None:
+    uri_list = "\n".join(Path(p).as_uri() for p in file_list)
+    subprocess.run(
+        ("xclip", "-sel", "clipboard", "-i", "-target", "text/uri-list"),
+        input=uri_list.encode(),
+        check=True,
+    )
+
+
+def read_linux_wayland() -> str:
+    return subprocess.check_output("wl-paste").decode()
+
+
+def write_linux_wayland(content: str) -> None:
+    subprocess.run("wl-copy", input=content, text=True)
+
+
+def read_image_linux_wayland() -> Image.Image:
+    data = subprocess.check_output(("wl-paste", "--type", "image/png"))
+    buffer = io.BytesIO(data)
+    return Image.open(buffer, formats=["png"])
+
+
+def write_image_linux_wayland(img: Image.Image) -> None:
+    buffer = io.BytesIO()
+    img.save(buffer, format="png")
+    subprocess.run(
+        ("wl-copy", "--type", "image/png"),
+        input=buffer.getvalue(),
+        check=True,
+    )
+
+
+def read_file_list_linux_wayland() -> List[str]:
+    result = subprocess.check_output(("wl-paste", "--type", "text/uri-list"))
+    return [url2pathname(urlparse(line).path) for line in result.decode().splitlines()]
+
+
+def write_file_list_linux_wayland(file_list: List[str]) -> None:
+    uri_list = "\n".join(Path(p).as_uri() for p in file_list)
+    subprocess.run(
+        ("wl-paste", "--type", "text/uri-list"),
+        input=uri_list.encode(),
         check=True,
     )
