@@ -113,7 +113,7 @@ jobs:
           # Start Xwayland and probe it for readiness for 10 secs.
           # When ready, set env var `ready` and exit the loop.
           for _ in $(seq 100); do
-            xdpyinfo -display "$DISPLAY" && ready=1 && echo "::notice::XWayland is running" && break
+            xdpyinfo -display "$DISPLAY" && ready=1 && echo "::notice title=XWayland set up::XWayland is running" && break
             sleep 0.1
           done
 
