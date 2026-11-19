@@ -147,7 +147,7 @@ jobs:
     env:
       XDG_RUNTIME_DIR: /tmp/xdg
       XDG_SESSION_TYPE: wayland
-      WAYLAND_DISPLAY: wayland-0
+      WAYLAND_DISPLAY: wayland-1
       WLR_BACKENDS: headless
       WLR_RENDERER: pixman
       WLR_LIBINPUT_NO_DEVICES: "1"
@@ -169,7 +169,7 @@ jobs:
           sway --config /dev/null > sway.log 2>&1 &
 
           # Wait for the Wayland socket.
-          for _ in $(seq 300); do
+          for _ in $(seq 100); do
             [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ] && found=1 && break
             sleep 0.1
           done
