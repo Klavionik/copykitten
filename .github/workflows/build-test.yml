@@ -111,9 +111,9 @@ jobs:
           sway --config /dev/null &
 
           # Start Xwayland and probe it for readiness for 10 secs.
-          # When ready, set env var `ready` and break from the loop.
+          # When ready, set env var `ready` and exit the loop.
           for _ in $(seq 100); do
-            xdpyinfo -display "$DISPLAY" && ready=1 && break
+            xdpyinfo -display "$DISPLAY" && ready=1 && echo "::notice XWayland is running" && break
             sleep 0.1
           done
 
