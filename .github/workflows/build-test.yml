@@ -169,13 +169,13 @@ jobs:
           sway --config /dev/null > sway.log 2>&1 &
 
           # Wait for the Wayland socket.
-          for _ in $(seq 100); do
+          for _ in $(seq 300); do
             [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ] && found=1 && break
             sleep 0.1
           done
 
           if [ -z "${found:-}" ]; then
-            echo "::error::Compositor failed to start"; cat sway.log; exit 1
+            echo "::error::Compositor failed to start"; cat sway.log; ls /tmp/xdg/; exit 1
           fi
       - name: Setup venv
         run: python -m venv .venv
