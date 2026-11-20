@@ -15,6 +15,7 @@ from tests.clipboard import (
     WriteClipboard,
     WriteClipboardFileList,
     WriteClipboardImage,
+    is_wayland,
 )
 
 DEFAULT_ITERATIONS = 50
@@ -66,6 +67,9 @@ def test_clear_linux(
     read_clipboard: ReadClipboard,
     write_clipboard: WriteClipboard,
 ):
+    err_message = (
+        "Error: target STRING not available\n" if not is_wayland() else "Nothing is copied\n"
+    )
     write_clipboard("text")
     sleep(SLEEP_TIME)
     copykitten.clear()
@@ -75,7 +79,7 @@ def test_clear_linux(
         read_clipboard()
 
     assert exc.value.returncode == 1
-    assert capfd.readouterr().err == "Error: target STRING not available\n"
+    assert capfd.readouterr().err == err_message
 
 
 @pytest.mark.repeat(ITERATIONS)
@@ -161,18 +165,21 @@ def test_paste_paths(
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
 def test_copy_no_detach(capfd: pytest.CaptureFixture[str], read_clipboard: ReadClipboard):
+    err_message = (
+        "Error: target STRING not available\n" if not is_wayland() else "Nothing is copied\n"
+    )
     subprocess.check_call(
         ["python", "-c", "import copykitten; copykitten.copy('text', detach=False)"]
     )
 
     # The clipboard content becomes unavailable due to the responsible process exiting.
-    # In this case xclip returns an error. Also, disable pytest's stderr capturing
+    # In this case xclip/wl-paste returns an error. Also, disable pytest's stderr capturing
     # to properly check the exception.
     with pytest.raises(subprocess.CalledProcessError) as exc:
         read_clipboard()
 
     assert exc.value.returncode == 1
-    assert capfd.readouterr().err == "Error: target STRING not available\n"
+    assert capfd.readouterr().err == err_message
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")

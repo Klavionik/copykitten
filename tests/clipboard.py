@@ -20,6 +20,10 @@ WriteClipboardFileList = Callable[[List[str]], None]
 T = TypeVar("T")
 
 
+def is_wayland() -> bool:
+    return bool(os.getenv("WAYLAND_DISPLAY", default=False))
+
+
 class Resolver(Generic[T]):
     platform_mapping = {"win32": "win", "linux": "linux", "darwin": "macos"}
 
@@ -32,9 +36,7 @@ class Resolver(Generic[T]):
 
         function_name = f"{self.action}_{platform}"
 
-        is_wayland = os.getenv("WAYLAND_DISPLAY", default=False)
-
-        if platform == "linux" and is_wayland:
+        if platform == "linux" and is_wayland():
             function_name = f"{function_name}_wayland"
 
         try:
@@ -261,7 +263,7 @@ def read_file_list_linux_wayland() -> List[str]:
 def write_file_list_linux_wayland(file_list: List[str]) -> None:
     uri_list = "\n".join(Path(p).as_uri() for p in file_list)
     subprocess.run(
-        ("wl-paste", "--type", "text/uri-list"),
+        ("wl-copy", "--type", "text/uri-list"),
         input=uri_list.encode(),
         check=True,
     )
