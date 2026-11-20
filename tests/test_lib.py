@@ -67,9 +67,7 @@ def test_clear_linux(
     read_clipboard: ReadClipboard,
     write_clipboard: WriteClipboard,
 ):
-    err_message = (
-        "Error: target STRING not available\n" if not is_wayland() else "Nothing is copied\n"
-    )
+    err_message = "Nothing is copied\n" if is_wayland() else "Error: target STRING not available\n"
     write_clipboard("text")
     sleep(SLEEP_TIME)
     copykitten.clear()
@@ -165,9 +163,7 @@ def test_paste_paths(
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Detach is supported only on Linux")
 def test_copy_no_detach(capfd: pytest.CaptureFixture[str], read_clipboard: ReadClipboard):
-    err_message = (
-        "Error: target STRING not available\n" if not is_wayland() else "Nothing is copied\n"
-    )
+    err_message = "Nothing is copied\n" if is_wayland() else "Error: target STRING not available\n"
     subprocess.check_call(
         ["python", "-c", "import copykitten; copykitten.copy('text', detach=False)"]
     )
