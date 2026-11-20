@@ -230,7 +230,7 @@ def write_file_list_linux(file_list: List[str]) -> None:
 
 
 def read_linux_wayland() -> str:
-    return subprocess.check_output("wl-paste").decode()
+    return subprocess.check_output("wl-paste").decode().rstrip()
 
 
 def write_linux_wayland(content: str) -> None:
