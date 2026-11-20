@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Enable support for Wayland compositors with `ext-data-control-v1`
+  (see [compositor
+  support](https://wayland.app/protocols/ext-data-control-v1#compositor-support)).
 ### Removed
 - Drop support for Python 3.8 and Python 3.9.
 
