@@ -1,3 +1,4 @@
+maturin_import_hook
 pillow==12.3.0
 pyobjc<=12.1; sys_platform == 'darwin'
 pytest==9.1.1
