@@ -71,6 +71,8 @@ docs/_build/
 # Pyenv
 .python-version
 
-
 # Local Taskfile
 Taskfile.yml
+
+# Debugging info
+*.pdb

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import pathlib
+from collections.abc import Callable
 from typing import List, Tuple, Union
 
-from ._copykitten import CopykittenError
+from ._copykitten import ChangeEvent, CopykittenError, ListenHandle
 from ._copykitten import clear as _clear
 from ._copykitten import copy as _copy
 from ._copykitten import copy_file_list as _copy_file_list
@@ -12,6 +13,7 @@ from ._copykitten import copy_file_list_wait as _copy_file_list_wait
 from ._copykitten import copy_image as _copy_image
 from ._copykitten import copy_image_wait as _copy_image_wait
 from ._copykitten import copy_wait as _copy_wait
+from ._copykitten import listen as _listen
 from ._copykitten import paste as _paste
 from ._copykitten import paste_file_list as _paste_file_list
 from ._copykitten import paste_image as _paste_image
@@ -24,6 +26,9 @@ __all__ = [
     "paste_image",
     "copy_paths",
     "paste_paths",
+    "listen",
+    "unlisten",
+    "ChangeEvent",
     "CopykittenError",
 ]
 
@@ -124,3 +129,7 @@ def paste_paths() -> List[pathlib.Path]:
     :return: A list of file paths.
     """
     return _paste_file_list()
+
+
+def listen(callback: Callable[[ChangeEvent], None]) -> ListenHandle:
+    return _listen(callback)
