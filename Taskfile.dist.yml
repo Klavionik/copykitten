@@ -1,0 +1,21 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  testall:
+    desc: Run copykitten test suite under X11, Wayland, and XWayland
+    cmds:
+      - for: [x11, wayland, xwayland]
+        cmd: docker compose run --rm {{.ITEM}} {{.CLI_ARGS}}
+
+
+  test:
+    desc: Run copykitten test suite under a choosen window server
+    # Execute `echo "interactive: true" > ~/.taskrc.yml` to make Task
+    # prompt for PLATFORM instead of passing it by hand.
+    requires:
+      vars:
+        - name: PLATFORM
+          enum: [x11, wayland, xwayland]
+    cmd: docker compose run --rm {{.PLATFORM}} {{.CLI_ARGS}}

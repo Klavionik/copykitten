@@ -1,0 +1,10 @@
+*
+!/docker/entrypoint.sh
+!/python
+!/src
+!/tests
+!Cargo.toml
+!Cargo.lock
+!pyproject.toml
+!README.md
+!requirements-dev.txt

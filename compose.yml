@@ -1,0 +1,52 @@
+# Docker Compose configuration that allows running copykitten test
+# suite on all supported Linux platforms: X11, Wayland, XWayland.
+
+x-sway-env: &sway-env
+  XDG_RUNTIME_DIR: /tmp/xdg
+  WLR_BACKENDS: headless
+  WLR_RENDERER: pixman
+  WLR_LIBINPUT_NO_DEVICES: "1"
+
+services:
+  x11:
+    build:
+      dockerfile: docker/linux.Dockerfile
+      context: .
+      args:
+        DEPENDENCIES: xvfb xclip x11-utils
+    environment:
+      DISPLAY_SERVER: xvfb
+      DISPLAY: :0
+      COPYKITTEN_TEST_ITERATIONS: ${COPYKITTEN_TEST_ITERATIONS:-5}
+      <<: *sway-env
+
+  xwayland:
+    build:
+      dockerfile: docker/linux.Dockerfile
+      context: .
+      args:
+        DEPENDENCIES: sway xwayland xclip x11-utils
+    environment:
+      # Don't export WAYLAND_DISPLAY to avoid activating wlr-data-control
+      # specific backend.
+      DISPLAY_SERVER: sway
+      DISPLAY: :0
+      COPYKITTEN_TEST_ITERATIONS: ${COPYKITTEN_TEST_ITERATIONS:-5}
+      <<: *sway-env
+
+  wayland:
+    build:
+      dockerfile: docker/linux.Dockerfile
+      context: .
+      args:
+        DEPENDENCIES: sway xwayland wl-clipboard
+    environment:
+      DISPLAY_SERVER: sway
+      XDG_SESSION_TYPE: wayland
+      WAYLAND_DISPLAY: wayland-1
+      COPYKITTEN_TEST_ITERATIONS: ${COPYKITTEN_TEST_ITERATIONS:-5}
+      <<: *sway-env
+    volumes:
+      - ./src:/home/copykitten/src
+      - ./python:/home/copykitten/python
+      - ./tests:/home/copykitten/tests
